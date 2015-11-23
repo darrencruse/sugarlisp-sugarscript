@@ -63,8 +63,8 @@ function hitHorizontal () {
   ballVx = if(ballX < 0 || ballX > canvas.width) -ballVx else ballVx;
 }
 
-// even though things are working the lispyx version flickers more
-// than the lispy version - I haven't figured out exactly why but
+// even though things are working the sugarscript version flickers more
+// than the sugarlisp version - I haven't figured out exactly why but
 // I have narrowed it down to *something* being different in the
 // generated code for this hitVertical function.
 
