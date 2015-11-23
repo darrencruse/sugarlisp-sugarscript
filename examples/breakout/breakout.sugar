@@ -1,0 +1,132 @@
+// The breakout game written in SugarScript
+// Open the html file in the same folder to try it.
+// Requires canvas support in browser
+// Based on javascript version here http://www.jsdares.com/
+
+#include "dom-macros.sugar"
+
+var canvas = null;
+var context = null;
+var bricksNumX = 7;
+var bricksNumY = 5;
+var brickWidth = null;
+var brickHeight = 20;
+var brickMargin = 4;
+var paddleWidth = 80;
+var paddleHeight = 12;
+var paddleX = 0;
+var ballX = 0;
+var ballY = 0;
+var ballVx = 0;
+var ballVy = 0;
+
+var bricks = arrayInit2d(5, 7, null);
+
+function init () {
+  paddleX = canvas.width / 2;
+  ballX = 40;
+  ballY = 150;
+  ballVx = 7;
+  ballVy = 12;
+  each2d(bricks, (val, i, j, arr) => { arr[i] = true; });
+}
+
+function clear() {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function circle(x y) {
+  context.beginPath();
+  context.arc(x, y, 10, 0, 2 * Math.PI);
+  context.fill();
+}
+
+function drawPaddle () {
+  var x = paddleX - paddleWidth / 2;
+  var y = canvas.height - paddleHeight;
+  context.fillRect(x, y, paddleWidth, paddleHeight);
+}
+
+function drawBricks () {
+  each2d(bricks, (val, x, y, arr) => {
+    if val {
+      var xpos = (x * brickWidth) + (brickMargin / 2);
+      var ypos = y * brickHeight + brickMargin / 2;
+      var width = brickWidth - brickMargin;
+      var height = brickHeight - brickMargin;
+      context.fillRect(xpos, ypos, width, height);
+    }
+  });
+}
+
+function hitHorizontal () {
+  ballVx = if(ballX < 0 || ballX > canvas.width) -ballVx else ballVx;
+}
+
+// even though things are working the lispyx version flickers more
+// than the lispy version - I haven't figured out exactly why but
+// I have narrowed it down to *something* being different in the
+// generated code for this hitVertical function.
+
+function hitVertical () {
+  cond {
+    case (ballY < 0) {
+      ballVy = -ballVy;
+      true;
+    }
+    case (ballY < (brickHeight * bricksNumY)) {
+      var bx = Math.floor(ballX / brickWidth);
+      var by = Math.floor(ballY / brickHeight);
+      if(bx >= 0 && bx < bricksNumX) {
+        if(get bx bricks[by]) {
+          (set bx bricks[by] false);
+          ballVy = -ballVy;
+        }
+      }
+      else
+        true;
+    }
+    case (ballY >= (canvas.height - paddleHeight)) {
+      var paddleLeft = paddleX - (paddleWidth / 2);
+      var paddleRight = paddleX + (paddleWidth / 2);
+      if ((ballX >= paddleLeft) && (ballX <= paddleRight)) {
+        ballVy = -ballVy;
+        true;
+      }
+      else {
+        init();
+        false;
+      }
+    }
+    default {
+      true
+    }
+  }
+}
+
+function tick () {
+  clear();
+  drawPaddle();
+  ballX = ballX + ballVx;
+  ballY = ballY + ballVy;
+  hitHorizontal();
+  if hitVertical() {
+    circle(ballX, ballY);
+    drawBricks();
+  }
+  else {
+    clear();
+  }
+}
+
+
+window.onload = (event) => {
+  canvas = $("breakout");
+  context = canvas.getContext("2d");
+  brickWidth = canvas.width / bricksNumX;
+  $listener(canvas, "mousemove", {
+    paddleX = (event.offsetX || (event.pageX - canvas.offsetLeft));
+  });
+  init();
+  window.setInterval(tick, 30);
+}

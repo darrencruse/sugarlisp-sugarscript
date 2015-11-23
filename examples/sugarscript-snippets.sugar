@@ -1,0 +1,218 @@
+// Some example SugarScript dialect code snippets
+// compare to the examples in core-snippets.slisp of SugarLisp Core
+
+console.log((str "Hello1" " World1"));
+
+var squarefn = function (n) {
+    n * n;
+}
+console.log(squarefn(10));
+
+// a simple named function
+function myadd(x, y) {
+  x + y;
+}
+
+// arrow functions
+var squarrow1 = (n) => { n * n; }
+console.log(squarrow1(10));
+
+var squarrow2 = (n) => n * n;
+console.log(squarrow2(10));
+
+try {
+  console.log("In try");
+  throw "In catch";
+}
+catch(err) {
+  console.log(err);
+}
+
+// if transpiles to a ternary expression:
+if (undefined? window) {
+  console.log("Not Running on browser");
+} else {
+  console.log("Running on browser");
+}
+
+// else is optional
+if (1 != 2) {
+  console.log("Nos are not equal")
+}
+
+if (object? console) {
+  console.log("console is an object");
+}
+else {
+  console.log("console is not an object");
+}
+
+// but you can still use a regular ternary if you like:
+var ten = 10;
+console.log(ten > 0 ? "ten is positive" : "ten is negative");
+
+// arrays
+var arr = [1, 2, 3, 4, 5];
+console.log(arr[2]);
+console.log("first is:", first(arr));
+console.log("rest is:", rest(arr));
+
+// empty array
+var mtarr2 = [];
+console.log("empty array is empty:", empty?(mtarr2));
+
+if (array? console) {
+  console.log("console is an array");
+}
+else {
+  console.log("console is not an array");
+}
+
+// The example below shows the dangers of using a macro
+macro squaremac (x) {
+  ~x * ~x;
+}
+
+console.log(squaremac(10));
+
+// The code above works fine. Now consider the code below
+var i = 2;
+console.log(squaremac(++i));
+
+// Oops you got 12! An embarrassing square of a no. Thats because the macro
+// expanded to (* ++i ++i) which is multiplying 3 and 4!
+
+macro let (args vals ...rest) {
+  (function ~args { ~rest } ~@vals)
+}
+
+let( (name, email, tel) ("John", "john@example.com", "555-555-5556")
+  console.log(name)
+  console.log(email))
+
+macro let2 (args vals ...rest) {
+  (~args => { ~rest } ~@vals)
+}
+
+let2( (name, email, tel) ("John", "john@example.com", "555-555-5556")
+  console.log(name)
+  console.log(email))
+
+// note {} is truly an alias for "do"
+{
+  console.log("testing do");
+  console.log("test again");
+}
+
+// regular expressions in sugarscript can omit the leading "#" (which core requires)
+var re = /[a-zA-Z0-9]/;
+// and make sure plain / still works right
+var fn = function (x y) { x / y };
+
+// js/json style object literals
+var obj = {
+  first: "fred",
+  last: "flintstone",
+  friends: ["barney","betty"],
+  toString: function () { this.first + " " + this.last }
+};
+
+console.log(obj.toString());
+
+// simple javascript passthru as a string
+js("console.log('hello from js string');");
+
+// javscript passthru using a template string
+// had trouble with this - the below was a workaround
+var name = "fred";
+var greeting = 'hello ${name}';
+js("console.log(greeting);");
+
+// test use of "@" for "this"
+var objAt = {
+  first: "fred",
+  last: "flintstone",
+  toString: function() { "${@first} ${@last}" },
+  dump: function() { console.log(this.toString()); }
+};
+
+objAt.dump();
+
+// slashy regexes deserve extra care...
+// (cause they can get mixed up with comments and divide!)
+
+// RIGHT NOW A REGEX LIKE /flint/g MISSES THE "g" ON THE END - NEED TO FIX
+console.log("fred flintstone contains 'flint':", (.test /flint/ "fred flintstone"));
+console.log("fred flintstone contains 'flint':", (/flint/.test "fred flintstone"));
+
+// make sure slashy regex doesn't break simple div
+console.log(10 / 5);
+
+/* and another block comment this time on one line */
+if(.test /[^\.]+\.[^\.]+/ "filename.ext")
+  console.log("regex correctly says 'filename.ext' has an extension");
+else
+  console.log("regex incorrectly says 'filename.ext' has no extension");
+
+// test the new keyword and some variations on Date
+var start1 = new Date;
+console.log(start1);
+
+var start2 = new Date();
+console.log(start2);
+
+var start3 = new Date("October 13, 1975 11:13:00");
+console.log(start3);
+
+// a simple switch
+var dayNum = start2.getDay();
+var dayName = switch dayNum {
+  case 0 "sun";
+  case 1 "mon";
+  case 2 "tues";
+  case 3 "wed";
+  case 4 "thu";
+  case 5 "fri";
+  case 6 "sat"
+};
+console.log("today is ${dayName}");
+
+// a simple while loop
+console.log('a while loop 3 down to 1...');
+var wy = 3;
+while (wy !== 0) {
+  console.log(wy);
+  wy--;
+}
+
+// a times loop
+console.log('and loop 4 times...');
+times x 4 {
+  console.log(x);
+};
+
+// Tests with arrow functions
+
+console.log('each of [1,2,3]...');
+each [1, 2, 3] (elem i list) => console.log(elem)
+
+console.log('same but using forEach...');
+[1,2,3].forEach((el) => console.log(el));
+
+// testing lexical this
+console.log('arrow functions bind the outer "this":');
+function Ubertest(x) {
+  this.x = x;
+
+  function Test(x) {
+    this.x = x;
+
+    var arr = [1,2,3];
+    arr.forEach((el) => console.log(this.x, el));
+  }
+
+  var arr = ['a','b','c'];
+  arr.forEach((el) => new Test("${this.x} ${el}"));
+}
+
+new Ubertest("Uber");

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Breakout Game</title>
+
+	<link rel="stylesheet" type="text/css" href="breakout.css">
+
+	<!-- for the in-browser repl -->
+	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+	<script src="http://terminal.jcubic.pl/js/jquery.terminal-src.js"></script>
+	<script src="http://terminal.jcubic.pl/js/jquery.mousewheel-min.js"></script>
+	<link href="http://terminal.jcubic.pl/css/jquery.terminal.css" rel="stylesheet"/>
+
+	<!-- for in browser lispyscript translation -->
+	<script type="text/javascript" src="../sugarlisp-browser-bundle-min.js.gz"></script>
+
+	<!-- this example uses sugarscript inline on the page -->
+	<!-- note no "id" here means this is plain (top level) code (i.e. not a commonJS module) -->
+	<script type="text/sugarscript">
+
+	// The breakout game written in SugarScript
+	// See examples/README for instructions how to run it
+	// Requires canvas support in browser
+	// Based on javascript version here http://www.jsdares.com/
+
+	(macro $listener (domObj eventName ...rest)
+	  (~domObj.addEventListener ~eventName (event) => ~rest))
+
+	var canvas = null;
+	var context = null;
+	var bricksNumX = 7;
+	var bricksNumY = 5;
+	var brickWidth = null;
+	var brickHeight = 20;
+	var brickMargin = 4;
+	var paddleWidth = 80;
+	var paddleHeight = 12;
+	var paddleX = 0;
+	var ballX = 0;
+	var ballY = 0;
+	var ballVx = 0;
+	var ballVy = 0;
+	var pause = false;
+
+	var bricks = arrayInit2d(5, 7, null);
+
+	function init () {
+	  paddleX = (canvas.width / 2);
+	  ballX = 40;
+	  ballY = 150;
+	  ballVx = 7;
+	  ballVy = 12;
+	  each2d(bricks, (val, i, j, arr) => { arr[i] = true; });
+	}
+
+	function clear() {
+	  context.clearRect(0, 0, canvas.width, canvas.height);
+	}
+
+	function circle(x y) {
+	  context.beginPath();
+	  context.arc(x, y, 10, 0, 2 * Math.PI);
+	  context.fill();
+	}
+
+	function drawPaddle () {
+	  var x = paddleX - (paddleWidth / 2);
+	  var y = (canvas.height - paddleHeight);
+	  context.fillRect(x, y, paddleWidth, paddleHeight);
+	}
+
+	function drawBricks () {
+	  each2d(bricks, (val, x, y, arr) => {
+	    if val {
+	      var xpos = (x * brickWidth) + (brickMargin / 2);
+	      var ypos = y * brickHeight + brickMargin / 2;
+	      var width = (brickWidth - brickMargin);
+	      var height = (brickHeight - brickMargin);
+	      context.fillRect(xpos, ypos, width, height);
+	    }
+	  });
+	}
+
+	function hitHorizontal () {
+	  ballVx = if(ballX < 0 || ballX > canvas.width) -ballVx else ballVx;
+	}
+
+	// even though things are working the lispyx version flickers more
+	// than the lispy version - I haven't figured out exactly why but
+	// I have narrowed it down to *something* being different in the
+	// generated code for this hitVertical function.
+
+	function hitVertical () {
+	  cond {
+	    case (ballY < 0) {
+	      ballVy = -ballVy;
+	      true;
+	    }
+	    case (ballY < (brickHeight * bricksNumY)) {
+	      var bx = Math.floor(ballX / brickWidth);
+	      var by = Math.floor(ballY / brickHeight);
+	      if(bx >= 0 && bx < bricksNumX) {
+	        if(get bx bricks[by]) {
+	          (set bx bricks[by] false);
+	          ballVy = -ballVy;
+	        }
+	      }
+	      else {
+	        true;
+				}
+	    }
+	    case (ballY >= (canvas.height - paddleHeight)) {
+	      var paddleLeft = paddleX - paddleWidth / 2;
+	      var paddleRight = paddleX + paddleWidth / 2;
+	      if ((ballX >= paddleLeft) && (ballX <= paddleRight)) {
+	        ballVy = -ballVy;
+	        true;
+	      }
+	      else {
+	        init();
+	        false;
+	      }
+	    }
+	    default {
+	      true;
+	    }
+	  }
+	}
+
+	function tick () {
+	  if (!pause) drawFrame();
+	}
+
+	function drawFrame () {
+	  clear();
+	  drawPaddle();
+	  ballX = ballX + ballVx;
+	  ballY = ballY + ballVy;
+	  hitHorizontal();
+	  if hitVertical() {
+	    circle(ballX, ballY);
+	    drawBricks();
+	  }
+	  else {
+	    clear();
+	  }
+	}
+
+	window.onload = (event) => {
+	  canvas = document.getElementById("breakout");
+	  context = canvas.getContext("2d");
+	  brickWidth = canvas.width / bricksNumX;
+	  $listener(canvas, "mousemove", {
+	    paddleX = (event.offsetX || (event.pageX - canvas.offsetLeft));
+	  });
+	  init();
+	  window.setInterval(tick, 30);
+	}
+
+	document.ready = () => (require "./transpiler").enableBrowserRepl();
+
+	// but these are provided to make it easy
+	#if (transpile.on === "browser")
+	  console.log("transpiled on browser");
+	#if (transpile.on === "server")
+	  console.log("transpiled on server");
+
+	// and these are specified via the --for command line option
+	// note these names are up to you - you could pass others
+	// e.g. "client" (instead of "browser"), "chrome", "native", etc.
+	#if (transpile.for === "browser")
+	  console.log("transpiled for browser");
+	#if (transpile.for === "server")
+	  console.log("transpiled for server");
+	#if (undefined?(transpile.for))
+	  console.log("transpiling for browser or server not specified");
+
+	</script>
+
+</head>
+<body>
+	<div id="wrapper">
+		<div id="adiv"></div>
+		<canvas id="breakout" width="450" height="450"></canvas>
+	</div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+// test with and without the "./"
+//var k = require("square.sugar");
+var k = require("./square.sugar");
+
+// or test .sugar files requiring .js files:
+//var k = require("square.js");
+//var k = require("./square.js");
+
+// or test omitting .sugar extensions:
+//var k = require("square");
+//var k = require("./square");
+
+console.log(k(10));

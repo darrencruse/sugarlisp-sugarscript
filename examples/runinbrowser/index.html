@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>SugarScript Compile In-Browser Example</title>
+  <script type="text/javascript" src="../sugarlisp-browser-bundle.js"></script>
+  <script type="text/sugarscript" id="square" src="./src/square.sugar"></script>
+  <script type="text/sugarscript" id="main">
+    var square = require("square");
+    alert(square(2));
+  </script>
+
+</head>
+<body>
+  <div>
+      <h1>SugarScript Compile In-Browser Example</h1>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,55 @@
+// A simple chatserver written in LispyScript Dialect-X
+// Connect to the server via telnet.
+// $ telnet <host> <port>
+// Any message typed in is broadcast to all other clients connected
+
+// Include node TCP Library
+var net = require("net");
+
+// Create TCP server
+var chatServer = net.createServer();
+
+// Set port to listen
+var port = 3000;
+
+// Create array to store connected clients
+var clientList = [];
+
+// Function to broadcast message to all the other
+// connected clients
+function broadcast(message, client) {
+  // Loop through connected clients
+  each clientList (currentClient) => {
+    // Make sure you don't write to client that sent the message
+    if (currentClient !== client)
+      currentClient.write("${client.name} says ${message}");
+  };
+}
+
+// The server connection event listener
+chatServer.on("connection", (client) => {
+  // set client.name to remote address + : + port
+  client.name = "${client.remoteAddress}:${client.remotePort}";
+  // Write Hi message to connected client
+  client.write("Hi " + client.name + "\n");
+  // Add client to client list
+  clientList.push(client);
+  // client data event listener, called whenever client sends
+  // some data
+  client.on("data", (data) => {
+      // call the broadcast function with data and client
+      broadcast(data, client);
+  });
+
+  // We dont want the server to crash while writing to a disconnected
+  // client. The 'end' event listener is called if client disconnects.
+  client.on("end", () => {
+    clientList.splice(clientList.indexOf(client),1);
+  });
+});
+
+chatServer.listen(port);
+
+console.log("Listening...");
+console.log("(telnet to port 3000 to chat)");
+

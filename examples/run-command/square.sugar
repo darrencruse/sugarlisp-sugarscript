@@ -1,0 +1,14 @@
+
+// try with and without the "./"
+// var sub = require("subtract.sugar");
+var sub = require("./subtract.sugar");
+
+// also try .sugar files requiring .js files:
+//var sub = require("subtract.js");
+//var sub = require("./subtract.js");
+
+module.exports = function (x) {
+  sub(x * x, 13);
+}
+
+console.log('in square');

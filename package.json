@@ -1,0 +1,33 @@
+{
+  "name": "sugarlisp-sugarscript",
+  "description": "a lisp with fewer parens (for people who hate parens!)",
+  "keywords": [
+    "javascript",
+    "language",
+    "sugarlisp",
+    "sugarscript",
+    "compiler",
+    "transpiler",
+    "lisp"
+  ],
+  "author": "Darren Cruse",
+  "version": "0.5.0",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://raw.github.com/darrencruse/sugarlisp-sugarscript/master/LICENSE"
+    }
+  ],
+  "engines": {
+    "node": ">=0.4.0"
+  },
+  "directories": {
+    "lib": "./lib"
+  },
+  "homepage": "https://github.com/darrencruse/sugarlisp-sugarscript",
+  "bugs": "https://github.com/darrencruse/sugarlisp-sugarscript/issues",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/darrencruse/sugarlisp-sugarscript.git"
+  }
+}

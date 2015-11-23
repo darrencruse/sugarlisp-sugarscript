@@ -1,0 +1,16 @@
+#use "match"
+
+// ternary expression
+export "ternary" function (forms) {
+  @transpileSubExpressions(forms);
+
+  match (forms) {
+
+    case ["ternary" condition iftrue iffalse]
+      """(${condition} ?
+       ..    ${iftrue} :
+       ..    ${iffalse})"""
+
+    default @error('ternary expects a condition followed by a "then" and an "else" expression');
+  }
+}
