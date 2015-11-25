@@ -30,7 +30,7 @@ var dnode = require('dnode');
   var d = dnode.connect(5004);
   d.on('remote', (remote) => {
     remote.transform('beep', (err, s) => {
-      if err
+      if (err)
         console.log('an error occurred ${err}');
       else
         console.log('beep goes ${s}');

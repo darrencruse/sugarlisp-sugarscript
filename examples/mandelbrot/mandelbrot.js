@@ -17,10 +17,10 @@ function mandelbrot(r, i, maxIter) {
   var loop = 1;
   var lr = 0;
   var li = 0;
-  while (((!(((((iter === maxIter)) || ((((lr === zr)) && ((li === zi))))) || ((4 <= ((zr_sq + zi_sq))))))))) {
+  while ((!(((((iter === maxIter)) || ((((lr === zr)) && ((li === zi))))) || ((4 <= ((zr_sq + zi_sq)))))))) {
     (function() {
       ++iter;
-      (((loop === iter)) ?
+      ((loop === iter) ?
         (function() {
           lr = zr;
           li = zi;
@@ -36,7 +36,7 @@ function mandelbrot(r, i, maxIter) {
     })()
   };
 
-  return (((((iter === maxIter)) || ((((lr === zr)) && ((li === zi)))))) ?
+  return ((((iter === maxIter)) || ((((lr === zr)) && ((li === zi))))) ?
     null :
     iter);
 }

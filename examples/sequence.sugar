@@ -25,7 +25,7 @@ sequence( requestHandler (request,response)
 
   // 2.
   (exists) => {
-    if exists
+    if (exists)
       fs.readFile(filename, "utf8", next());
     else
       response.end("File Not Found")
@@ -33,7 +33,7 @@ sequence( requestHandler (request,response)
 
   // 3.
   (err, data) => {
-    if err
+    if (err)
       response.end("Internal Server Error")
     else
       response.end(data)

@@ -6,7 +6,7 @@ var clientList = [];
 
 function broadcast(message, client) {
   return clientList.forEach(function(currentClient) {
-    return (((currentClient !== client)) ?
+    return ((currentClient !== client) ?
       currentClient.write([client.name, " says ", message].join('')) : undefined);
   });
 }

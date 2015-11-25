@@ -5,7 +5,7 @@ var http = require("http");
 var requestHandler = function(request, response) {
   return (function() {
     var filename = null;
-    (((request.url === "/")) ?
+    ((request.url === "/") ?
       filename = "index.html" :
       filename = request.url.substr(1));
     response.setHeader("Content-Type", "text/html");
@@ -39,5 +39,5 @@ var requestHandler = function(request, response) {
 };
 
 var server = http.createServer(requestHandler);
-server.listen(3000, "127.0.0.1");
-console.log("Server running at http://127.0.0.1:3000/");
+server.listen(3000, "localhost");
+console.log("Server running at http://localhost:3000/");

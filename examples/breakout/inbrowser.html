@@ -12,7 +12,8 @@
 	<link href="http://terminal.jcubic.pl/css/jquery.terminal.css" rel="stylesheet"/>
 
 	<!-- for in browser lispyscript translation -->
-	<script type="text/javascript" src="../sugarlisp-browser-bundle-min.js.gz"></script>
+	<!--script type="text/javascript" src="../sugarlisp-browser-bundle-min.js.gz"></script-->
+        <script type="text/javascript" src="../sugarlisp-browser-bundle.js"></script>
 
 	<!-- this example uses sugarscript inline on the page -->
 	<!-- note no "id" here means this is plain (top level) code (i.e. not a commonJS module) -->
@@ -23,8 +24,9 @@
 	// Requires canvas support in browser
 	// Based on javascript version here http://www.jsdares.com/
 
-	(macro $listener (domObj eventName ...rest)
-	  (~domObj.addEventListener ~eventName (event) => ~rest))
+	macro $listener (domObj eventName ...rest) {
+	  (~domObj.addEventListener ~eventName (event) => ~rest)
+        }
 
 	var canvas = null;
 	var context = null;
@@ -71,7 +73,7 @@
 
 	function drawBricks () {
 	  each2d(bricks, (val, x, y, arr) => {
-	    if val {
+	    if (val) {
 	      var xpos = (x * brickWidth) + (brickMargin / 2);
 	      var ypos = y * brickHeight + brickMargin / 2;
 	      var width = (brickWidth - brickMargin);
@@ -137,7 +139,7 @@
 	  ballX = ballX + ballVx;
 	  ballY = ballY + ballVy;
 	  hitHorizontal();
-	  if hitVertical() {
+	  if (hitVertical()) {
 	    circle(ballX, ballY);
 	    drawBricks();
 	  }

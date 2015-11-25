@@ -77,7 +77,7 @@ function drawBricks() {
 }
 
 function hitHorizontal() {
-  return ballVx = ((((ballX < 0) || (ballX > canvas.width))) ?
+  return ballVx = (((ballX < 0) || (ballX > canvas.width)) ?
     -ballVx :
     ballVx);
 }
@@ -92,7 +92,7 @@ function hitVertical() {
       (function() {
         var bx = Math.floor((ballX / brickWidth));
         var by = Math.floor((ballY / brickHeight));
-        return ((((bx >= 0) && (bx < bricksNumX))) ?
+        return (((bx >= 0) && (bx < bricksNumX)) ?
           (function() {
             return (bricks[by][bx] ?
               (function() {
@@ -106,7 +106,7 @@ function hitVertical() {
         (function() {
           var paddleLeft = (paddleX - ((paddleWidth / 2)));
           var paddleRight = (paddleX + ((paddleWidth / 2)));
-          return (((((ballX >= paddleLeft)) && ((ballX <= paddleRight)))) ?
+          return ((((ballX >= paddleLeft)) && ((ballX <= paddleRight))) ?
             (function() {
               ballVy = -ballVy;
               return true;
@@ -138,14 +138,14 @@ function tick() {
     })());
 }
 window.onload = function(event) {
-  canvas = (document.getElementById("breakout"));
+  canvas = document.getElementById("breakout");
   context = canvas.getContext("2d");
   brickWidth = (canvas.width / bricksNumX);
-  (canvas.addEventListener("mousemove", function(event) {
+  canvas.addEventListener("mousemove", function(event) {
     return (function() {
       return paddleX = ((event.offsetX || ((event.pageX - canvas.offsetLeft))));
     })();
-  }));
+  });
   init();
   return window.setInterval(tick, 30);
 };

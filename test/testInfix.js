@@ -44,84 +44,84 @@ var x = 0;
 (x <<= 2);
 console.log(x);
 console.log('AND SOME COMPARISONS...');
-console.log((((7 === 2)) ?
+console.log(((7 === 2) ?
   (function() {
     return "7 === 2!";
   })() :
   (function() {
     return "7 does not === 2";
   })()));
-console.log((((7 !== 2)) ?
+console.log(((7 !== 2) ?
   (function() {
     return "7 does not == 2";
   })() :
   (function() {
     return "7 == 2 ?!";
   })()));
-console.log((((7 > 2)) ?
+console.log(((7 > 2) ?
   (function() {
     return "7 greater than 2";
   })() :
   (function() {
     return "7 not greater than 2 ?!";
   })()));
-console.log((((7 >= 2)) ?
+console.log(((7 >= 2) ?
   (function() {
     return "7 greater than or equal to 2";
   })() :
   (function() {
     return "7 not greater or equal to 2 ?!";
   })()));
-console.log((((7 < 2)) ?
+console.log(((7 < 2) ?
   (function() {
     return "7 less than 2 ?!";
   })() :
   (function() {
     return "7 not less than 2";
   })()));
-console.log((((7 <= 2)) ?
+console.log(((7 <= 2) ?
   (function() {
     return "7 less than or equal to 2 ?!";
   })() :
   (function() {
     return "7 not less than or equal to 2";
   })()));
-console.log((((((7 <= 2)) || ((7 >= 2)))) ?
+console.log(((((7 <= 2)) || ((7 >= 2))) ?
   (function() {
     return "false || true passed";
   })() :
   (function() {
     return "false || true failed";
   })()));
-console.log((((((7 <= 2)) && ((7 >= 2)))) ?
+console.log(((((7 <= 2)) && ((7 >= 2))) ?
   (function() {
     return "false && true is true ?!";
   })() :
   (function() {
     return "false && true is false";
   })()));
-console.log((((7 == "7")) ?
+console.log(((7 == "7") ?
   (function() {
     return "it said 7 == '7'";
   })() :
   (function() {
     return "it said 7 not == '7' ?!";
   })()));
-console.log((((7 != "7")) ?
+console.log(((7 != "7") ?
   (function() {
     return "it said 7 != '7' ?!";
   })() :
   (function() {
     return "it said 7 == '7'";
   })()));
-console.log((((7 === "7")) ?
+console.log(((7 === "7") ?
   (function() {
     return "it said 7 === '7' !?";
   })() :
   (function() {
     return "it said 7 not === '7'";
   })()));
-console.log((((7 !== "7")) ?
+console.log(((7 !== "7") ?
   (function() {
     return "it said 7 !== '7'";
   })() :

@@ -43,7 +43,7 @@ console.log(squarrow2(10));
   (function() {
     console.log("Running on browser");
   })());
-(((1 != 2)) ?
+((1 != 2) ?
   (function() {
     console.log("Nos are not equal");
   })() : undefined);
@@ -79,19 +79,19 @@ console.log("empty array is empty:", (0 === mtarr2.length));
   (function() {
     console.log("console is not an array");
   })());
-console.log(((10 * 10)));
+console.log((10 * 10));
 var i = 2;
-console.log(((++i * ++i)));
+console.log((++i * ++i));
 
-((function(name, email, tel) {
+(function(name, email, tel) {
   console.log(name);
   console.log(email);
-})("John", "john@example.com", "555-555-5556"));
+})("John", "john@example.com", "555-555-5556");
 
-((function(name, email, tel) {
+(function(name, email, tel) {
   console.log(name);
   console.log(email);
-})("John", "john@example.com", "555-555-5556"));
+})("John", "john@example.com", "555-555-5556");
 (function() {
   console.log("testing do");
   console.log("test again");
@@ -159,7 +159,7 @@ var dayName = ((dayNum === 0) ?
 console.log(["today is ", dayName].join(''));
 console.log('a while loop 3 down to 1...');
 var wy = 3;
-while (((wy !== 0))) {
+while ((wy !== 0)) {
   (function() {
     console.log(wy);
     return wy--;

@@ -49,7 +49,7 @@ function drawPaddle () {
 
 function drawBricks () {
   each2d(bricks, (val, x, y, arr) => {
-    if val {
+    if (val) {
       var xpos = (x * brickWidth) + (brickMargin / 2);
       var ypos = y * brickHeight + brickMargin / 2;
       var width = brickWidth - brickMargin;
@@ -110,7 +110,7 @@ function tick () {
   ballX = ballX + ballVx;
   ballY = ballY + ballVy;
   hitHorizontal();
-  if hitVertical() {
+  if (hitVertical()) {
     circle(ballX, ballY);
     drawBricks();
   }

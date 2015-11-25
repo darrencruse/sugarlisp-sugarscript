@@ -65,8 +65,7 @@ exports['('] = reader.operator({
   postfix: reader.operator('postfix', 'binary', tradfncalltosexpr, 17.5)
 });
 
-//  postfix: reader.operator('postfix', 'binary', tradfncalltosexpr, 17.5, {beforeRead: noCustomReader})
-
+// this is just a helper for the above
 function readparenthesizedlist(source, opSpec, openingParenForm) {
   // note since '(' is defined as a prefix operator the '(' has already been read
   // read_delimited_list infers this because we pass openingParenForm below
@@ -92,6 +91,7 @@ function readparenthesizedlist(source, opSpec, openingParenForm) {
 
 //  postfix: reader.operator('postfix', 'unary', tradfncalltosexpr, 17.5, {altprefix: "fncall("})
 
+// this is just a helper for the above
 // note the reader calls tradfncalltosexpr *after* reading the opening paren
 function tradfncalltosexpr(source, opSpec, leftForm, openingParenForm) {
 
@@ -262,7 +262,10 @@ exports['new'] = function(source, text) {
 // if expression
 exports['if'] = function(source) {
   var ifToken = source.next_token('if');
-  var condition = reader.read(source);
+// OLD DELETE  var condition = reader.read(source);
+
+  // as with javascript - the condition is wrapped in parens
+  var condition = reader.read_wrapped_delimited_list(source, '(',')');
 
   // if in core *is* an expression (a ternary)
   var list = sl.list(sl.atom("if", {token: ifToken}));
@@ -335,7 +338,7 @@ exports['macro'] = function(source) {
     mName = sl.atom(token.text, {token: token});
     list.push(mName);
   }
-  // args
+  // args are surrounded by parens (even in sugarlisp core)
   if(source.on('(')) {
     list.push(reader.read(source));
   }
@@ -343,15 +346,15 @@ exports['macro'] = function(source) {
     source.error("a macro declaration's arguments should be enclosed in ()");
   }
 
-  // in sugarscript the macro body is wrapped in either {} or ():
+  // in sugarscript the macro body is wrapped in {...}
+  // note this is purely a grammar thing (it is *not* saying every macro is a "do")
+  // also note that the reading of the macro body uses whatever dialects are
+  // current i.e. the macro body is written in the dialect of the containing file.
   if(source.on('{')) {
-    list.push(corerfuncs.read_delimited_list(source, '{', '}'));
-  }
-  else if(source.on('(')) {
-    list.push(reader.read(source));
+    list.push(reader.read_wrapped_delimited_list(source, '{', '}'));
   }
   else {
-    source.error("a macro declaration's body should be enclosed in () or {}");
+    source.error("a macro declaration's body should be enclosed in {}");
   }
 
   list.__parenoptional = true;
@@ -366,7 +369,9 @@ handleCondSwitch = function(source, text) {
   var list = sl.list(sl.atom(text, {token: condToken}));
   if(text === "switch") {
     // switch has the item to match (cond does not)
-    list.push(reader.read(source));
+    // as with javascript - the switch value is wrapped in parens
+    list.push(reader.read_wrapped_delimited_list(source, '(',')'));
+// OLD DELETE    list.push(reader.read(source));
   }
   if(source.on('{')) {
     var condBody = corerfuncs.read_delimited_list(source, '{', '}');
@@ -522,11 +527,11 @@ function ternary2prefix(source, opSpec, conditionForm, questionMarkForm) {
 }
 
 // paren free "while" takes a condition and a body
-exports['while'] = reader.parenfree(2);
+exports['while'] = reader.parenfree(2, {parenthesizedFirst: true});
 // paren free "times" takes a var, count, and body
 exports['times'] = reader.parenfree(3);
-// paren free "each" takes a list/array plus a function called with each element,
-// (and optionally two args more - the position in the list, and the whole list)
+// paren free "each" takes a list/array plus a function called with: each element,
+// the position in the list, and the whole list.
 exports['each'] = reader.parenfree(2);
 
 /*
