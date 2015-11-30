@@ -6,8 +6,9 @@ var clientList = [];
 
 function broadcast(message, client) {
   return clientList.forEach(function(currentClient) {
-    return ((currentClient !== client) ?
-      currentClient.write([client.name, " says ", message].join('')) : undefined);
+    if ((currentClient !== client)) {
+      currentClient.write([client.name, " says ", message].join(''))
+    };
   });
 }
 chatServer.on("connection", function(client) {

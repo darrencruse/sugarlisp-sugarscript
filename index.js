@@ -11,5 +11,8 @@ module.exports = {
     // there's an indeterminate number of vars so comma is used to know
     // when the var form ends)
     source.setWhitespaceRE(/[\s;]/);
+    // for transpiling statements (as opposed to expressions)
+    ctx.options.transpile.statements = true;
+    ctx.options.transpile.implicitReturns = true;
   }
 };

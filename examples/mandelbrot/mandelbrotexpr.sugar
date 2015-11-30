@@ -1,7 +1,6 @@
 // Lispyscript port of Hot Cocoa Lisp Mandelbrot example found here:
 // https://github.com/olleicua/hcl-canvas-mandelbrot/blob/master/mandelbrot.hcl
 //#transpile { to: 'core' }
-
 var canvas = first(document.getElementsByTagName("canvas"));
 var ctx = canvas.getContext("2d");
 
@@ -27,8 +26,8 @@ function mandelbrot (r, i, maxIter) {
     if(loop === iter) {
       lr = zr;
       li = zi;
-      loop += loop;
-    } // grow loop
+      loop += loop;  // grow loop
+    }
     zr_sq = square(zr);
     zi_sq = square(zi); // zi_sq and zr_sq
     zi *= zr;
@@ -38,24 +37,20 @@ function mandelbrot (r, i, maxIter) {
     zr += r; // zr = zr_sq - zi_sq + cr
  }
 
- if ((iter === maxIter) || ((lr === zr) && (li === zi)))
-  return null;
- else
-  return iter;
+ if? ((iter === maxIter) || ((lr === zr) && (li === zi))) null else iter
 }
 
 function color (n) {
-  if (nil? n)
-    return "rgb(0,0,0)"
-  else
-  {
+  if? (nil? n)
+    "rgb(0,0,0)"
+  else do {
       n = (32 * n) % 768;
       var rgb = cond {
         (n < 256) [(255 - n), n, 0]
         (n < 512) [0, (511 - n), (n - 256)]
         true      [(n - 512), 0, (767 - n)]
       }
-      return "rgb(${rgb[0]},${rgb[1]},${rgb[2]})";
+      "rgb(${rgb[0]},${rgb[1]},${rgb[2]})"
   }
 }
 
@@ -80,43 +75,37 @@ function draw() {
 draw();
 
 // note the lack of parens around the "e.keyCode" for the switch 
-document.addEventListener("keyup", (e) => switch (e.keyCode) {
+document.addEventListener("keyup", (e) => case (e.keyCode) {
     // q
-    case 81: {
+    81 do {
       params.range *= (2 / 3);
       ++params.maxIter;
       draw();
-      break;
     }
     // w
-    case 87: {
+    87 do {
       params.i -= (params.range / 3);
       draw();
-      break;
     }
     // e
-    case 69: {
+    69 do {
       params.range *= (3 / 2);
       --params.maxIter;
       draw();
-      break;
     }
     // a
-    case 65: {
+    65 do {
       params.r -= (params.range / 3);
       draw();
-      break;
     }
     // s
-    case 83: {
+    83 do {
       params.i += (params.range / 3);
       draw();
-      break;
     }
     // d
-    case 68: {
+    68 do {
       params.r += (params.range / 3);
       draw();
-      break;
     }
 });

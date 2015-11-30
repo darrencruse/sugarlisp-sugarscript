@@ -21,12 +21,12 @@
 // note the "for" names are up to you - you could pass others
 // e.g. "browser" (instead of "client"), "chrome", "native", etc.
 
-#if (transpile.for === "client")
+#if (transpile["for"] === "client")
   console.log("transpiled for client");
 
-#if (transpile.for === "server")
+#if (transpile["for"] === "server")
   console.log("transpiled for server");
 
-#if undefined?(transpile.for)
-  console.log("transpile for browser or server not specified");
+#if (undefined?(transpile["for"]))
+  console.log("transpile for client or server not specified");
 

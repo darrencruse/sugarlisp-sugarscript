@@ -1,6 +1,6 @@
 {
   "name": "sugarlisp-sugarscript",
-  "description": "a lisp with fewer parens (for people who hate parens!)",
+  "description": "A lisp that looks like javascript!",
   "keywords": [
     "javascript",
     "language",
@@ -11,7 +11,7 @@
     "lisp"
   ],
   "author": "Darren Cruse",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "licenses": [
     {
       "type": "MIT",

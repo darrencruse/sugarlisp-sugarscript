@@ -1,10 +1,10 @@
 // Some example SugarScript dialect code snippets
 // compare to the examples in core-snippets.slisp of SugarLisp Core
 
-console.log((str "Hello1" " World1"));
+console.log((str "Hello" " World"));
 
 var squarefn = function (n) {
-    n * n;
+   n * n;
 }
 console.log(squarefn(10));
 
@@ -12,6 +12,7 @@ console.log(squarefn(10));
 function myadd(x, y) {
   x + y;
 }
+console.log(myadd(10,10));
 
 // arrow functions
 var squarrow1 = (n) => { n * n; }
@@ -164,18 +165,54 @@ console.log(start2);
 var start3 = new Date("October 13, 1975 11:13:00");
 console.log(start3);
 
-// a simple switch
 var dayNum = start2.getDay();
-var dayName = switch(dayNum) {
-  case 0 "sun";
-  case 1 "mon";
-  case 2 "tues";
-  case 3 "wed";
-  case 4 "thu";
-  case 5 "fri";
-  case 6 "sat"
+
+// a traditional javascript switch statement
+var dayName;
+switch(dayNum) {
+  case 0:
+    dayName = "sun";
+    break;
+  case 1:
+    dayName = "mon";
+    break;
+  case 2:
+    dayName = "tues";
+    break;
+  case 3:
+    dayName = "wed";
+    break;
+  case 4:
+    dayName = "thu";
+    break;
+  case 5:
+    dayName = "fri";
+    break;
+  default:
+    dayName = "sat";
+    break;
 };
-console.log("today is ${dayName}");
+console.log("switch said today is ${dayName}");
+
+// a simple case (like a switch that returns a value)
+dayName = case(dayNum) {
+  0 "sun";
+  1 "mon";
+  2 "tues";
+  3 "wed";
+  4 "thu";
+  5 "fri";
+  6 "sat";
+};
+console.log("case said today is ${dayName}");
+
+// a simple cond (like an if/else/if that returns a value)
+var dayMsg = cond {
+  (dayNum === 5) "tgif!!";
+  (dayNum === 0 || dayNum === 6) "yahoo it's the weekend!";
+  true "blech gotta work today it's a weekday";
+}
+console.log("cond says ${dayMsg}");
 
 // a simple while loop
 console.log('a while loop 3 down to 1...');
@@ -185,9 +222,9 @@ while (wy !== 0) {
   wy--;
 }
 
-// a times loop
+// a dotimes loop
 console.log('and loop 4 times...');
-times x 4 {
+dotimes(x, 4) {
   console.log(x);
 };
 

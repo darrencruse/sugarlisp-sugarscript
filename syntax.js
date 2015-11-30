@@ -4,51 +4,6 @@ var sl = require('sugarlisp-core/types'),
     corerfuncs = require('sugarlisp-core/readfuncs'),
     coresyntax = require('sugarlisp-core/syntax');
 
-/*
-// traditional function call style with name then paren i.e. fn(args..)
-// note:  they *must* omit spaces between function name and opening arg paren
-exports['__sugarscript_tradfncall'] =
-{
-  // function name then paren
-  // note we're allowing for lispy names e.g. "null?", "int->str", "<-alts" etc.
-  match:  /[a-zA-Z\$\?\*\+\-\~\_\<\>][0-9a-zA-Z\$\?\*\+\-\~\_\<\>]*\(/g,
-  // set priority early so e.g. "each(" is matched not "each"
-  priority: 100,
-  read:
-    function(source) {
-      var form;
-      // note: can't use peek_token below
-      //   (since that uses the syntax table that's an infinite loop!)
-      var token = source.peek_delimited_token(undefined, "(");
-      if(token) {
-        if(source.on(token.text + '(')) {
-          // here we make sure we don't take over from *explicit* handlers though
-          // e.g. we can't have e.g. "function(", "if(", etc. handled by this!
-          // (after all in sugarscript these are *paren-free*)
-          var dialect = reader.get_current_dialect(source);
-          if(!dialect.syntax[token.text] || dialect.syntax[token.text] == reader.symbol) {
-            // we are on a ( that had no space between it and the preceding symbol
-            // treat it as a normal list but make the symbol be the first element
-            token = source.next_token(/[a-zA-Z\$\?\*\+\-\~\_\<\>][0-9a-zA-Z\$\?\*\+\-\~\_\<\>]/g);
-            var list = corerfuncs.read_delimited_list(source, '(', ')',
-                                        [sl.atom(token.text, {token: token})]);
-            return list;
-          }
-          else {
-            // let the other handlers take it:
-            return reader.retry_match;
-          }
-        }
-        else {
-          // this should never happen since our regex includes the "(":
-          form = sl.atom(token.text, {token: token});
-        }
-      }
-      return form;
-    }
-};
-*/
-
 // the opening paren is treated as an operator in sugarscript
 // A normal parenthesized expression "(x)" is considered a prefix operator
 // But when used postfix e.g. "fn(x)" this is understood to be a function
@@ -69,7 +24,7 @@ exports['('] = reader.operator({
 function readparenthesizedlist(source, opSpec, openingParenForm) {
   // note since '(' is defined as a prefix operator the '(' has already been read
   // read_delimited_list infers this because we pass openingParenForm below
-  return corerfuncs.read_delimited_list(source, openingParenForm, ')');
+  return reader.read_delimited_list(source, openingParenForm, ')');
 }
 
 // NOT SURE WE NEEDED THIS AFTER ALL
@@ -103,7 +58,7 @@ function tradfncalltosexpr(source, opSpec, leftForm, openingParenForm) {
   // }
 
   // whatever preceded the opening paren becomes the beginning of the list:
-  return corerfuncs.read_delimited_list(source, openingParenForm, ')', [leftForm]);
+  return reader.read_delimited_list(source, openingParenForm, ')', [leftForm]);
 }
 
 // traditional array/object access with name then bracket i.e. arr[(index or prop)]
@@ -148,7 +103,7 @@ function handleFuncs(source, text) {
   }
   // args
   if(source.on('(')) {
-    var fArgs = corerfuncs.read_delimited_list(source, '(', ')', undefined);
+    var fArgs = reader.read_delimited_list(source, '(', ')', undefined);
     list.push(fArgs);
   }
   else if(source.on('~')) {
@@ -159,7 +114,7 @@ function handleFuncs(source, text) {
   if(source.on('{')) {
     // by default we assume there's no need for a "do" IIFE wrapper -
     // so we read what's *inside* the curly braces:
-    fBody = corerfuncs.read_delimited_list(source, '{', '}');
+    fBody = reader.read_delimited_list(source, '{', '}');
     // our infix translation sometimes leads to extra wrapper parens:
 // COMMENTING I *THINK* THIS NOT NEEDED ANYMORE?
     // if(fBody.length === 1 && sl.isList(fBody[0])) {
@@ -259,30 +214,6 @@ exports['new'] = function(source, text) {
   return list;
 };
 
-// if expression
-exports['if'] = function(source) {
-  var ifToken = source.next_token('if');
-// OLD DELETE  var condition = reader.read(source);
-
-  // as with javascript - the condition is wrapped in parens
-  var condition = reader.read_wrapped_delimited_list(source, '(',')');
-
-  // if in core *is* an expression (a ternary)
-  var list = sl.list(sl.atom("if", {token: ifToken}));
-  list.push(condition);
-  list.push(reader.read(source));
-
-  // note: if there's an else they *must* use the keyword "else"
-  if(source.on('else')) {
-    // there's an else clause
-    source.skip_text('else');
-    list.push(reader.read(source));
-  }
-
-  list.__parenoptional = true;
-  return list;
-};
-
 // parenfree template declarations
 // note:  the "template" overlaps the newer html dialect, but
 //   we still support "template" for backward compatibility.
@@ -364,37 +295,42 @@ exports['macro'] = function(source) {
 // sugarscript's "cond" and "switch" are paren free but they put {} around the body
 // and use case/default in front of each condition
 // note: text will be either "cond" or "switch"
-handleCondSwitch = function(source, text) {
+/*
+DELETE?
+handleCondCase = function(source, text) {
   var condToken = source.next_token(text);
   var list = sl.list(sl.atom(text, {token: condToken}));
-  if(text === "switch") {
+  if(text === "case") {
     // switch has the item to match (cond does not)
     // as with javascript - the switch value is wrapped in parens
     list.push(reader.read_wrapped_delimited_list(source, '(',')'));
-// OLD DELETE    list.push(reader.read(source));
   }
   if(source.on('{')) {
-    var condBody = corerfuncs.read_delimited_list(source, '{', '}');
-    condBody.forEach(function(caseForm) {
-      // our case/default are e.g. (case (!= 0) ...) but lispy core
-      // expects simple pairs and no "case" or "default":
-      if(sl.isList(caseForm)) {
-        if(sl.valueOf(caseForm[0]) === 'case') {
-          list.push(caseForm[1]);
-          list.push(caseForm[2]);
-        }
-        else if(sl.valueOf(caseForm[0]) === 'default') {
-          list.push(sl.atom(true));
-          list.push(caseForm[1]);
+    var body = reader.read_delimited_list(source, '{', '}');
+    if((body.length % 2) === 0) {
+      body.forEach(function(caseForm) {
+        // the body has pairs:
+        if(sl.isList(caseForm)) {
+          if(sl.valueOf(caseForm[0]) === 'case') {
+            list.push(caseForm[1]);
+            list.push(caseForm[2]);
+          }
+          else if(sl.valueOf(caseForm[0]) === 'default') {
+            list.push(sl.atom(true));
+            list.push(caseForm[1]);
+          }
+          else {
+            source.error('a ' + text + ' expects "case" or "default" in its body');
+          }
         }
         else {
           source.error('a ' + text + ' expects "case" or "default" in its body');
         }
-      }
-      else {
-        source.error('a ' + text + ' expects "case" or "default" in its body');
-      }
-    })
+      })
+    }
+    else {
+      source.error("a " + text + " requires an even number of match pairs in it's body");
+    }
   }
   else {
     source.error("a " + text + " body should be enclosed in {}");
@@ -404,8 +340,34 @@ handleCondSwitch = function(source, text) {
   return list;
 };
 
-exports['cond'] = handleCondSwitch;
-exports['switch'] = handleCondSwitch;
+exports['cond'] = handleCondCase;
+exports['case'] = handleCondCase;
+*/
+
+// we're doing cond and case in a *slightly* more javascripty syntax like e.g.
+//   cond { (x === 0) "zero"; (x > 0) "positive"; }
+// and
+//   case(x) { 0 "zero"; 1 "one"; true "other"; }
+exports['cond'] = reader.parenfree(1, {
+  bracketed: 1,
+  validate: function(source, forms) {
+    // note the forms list *starts* with 'cond' hence the -1:
+    if(((forms.length-1) % 2) !== 0) {
+      source.error("a cond requires an even number of match pairs in it's body");
+    }
+  }
+});
+
+exports['case'] = reader.parenfree(2, {
+  parenthesized: 1,
+  bracketed: 2,
+  validate: function(source, forms) {
+    // note the forms list *starts* with 'case' and match hence the -2:
+    if(((forms.length-2) % 2) !== 0) {
+      source.error("a case requires an even number of match pairs in it's body");
+    }
+  }
+});
 
 // sugarscript's "match" is paren free except for parens around
 // the thing to match (like the parens in "switch", "if", etc)
@@ -429,8 +391,8 @@ exports['match'] = function(source) {
 };
 
 // match case/default do not need parens in sugarscript:
-exports['case'] = reader.parenfree(2);
-exports['default'] = reader.parenfree(1);
+//exports['case'] = reader.parenfree(2);
+//exports['default'] = reader.parenfree(1);
 
 // sugarscript's "try" is paren free
 // note: lispy core's treats all but the final catch function as the body
@@ -526,45 +488,178 @@ function ternary2prefix(source, opSpec, conditionForm, questionMarkForm) {
   return sl.list("ternary", conditionForm, thenForm, elseForm);
 }
 
+// if? expression
+exports['if?'] = function(source) {
+  var ifToken = source.next_token('if?');
+// OLD DELETE  var condition = reader.read(source);
+
+  // as with javascript - the condition is wrapped in parens
+  var condition = reader.read_wrapped_delimited_list(source, '(',')');
+
+  // if in core *is* an expression (a ternary)
+  var list = sl.list(sl.atom("if?", {token: ifToken}));
+  list.push(condition);
+  list.push(reader.read(source));
+
+  // note: if there's an else they *must* use the keyword "else"
+  if(source.on('else')) {
+    // there's an else clause
+    source.skip_text('else');
+    list.push(reader.read(source));
+  }
+
+  list.__parenoptional = true;
+  return list;
+};
+
+// statements ///////////////////////////////////////////////////////
+// the following are paren-free readers for commands that support use
+// of javascript *statements*.  Even "return" is supported.  And yes -
+// this is really weird for a "lisp"!
+
+// if statement
+exports['if'] = function(source) {
+  var ifToken = source.next_token('if');
+  condition = reader.read_wrapped_delimited_list(source, '(', ')');
+
+  // note: scripty generates if *statements* - so we use "ifs" (not just "if")
+  var list = sl.list(sl.atom("if", {token: ifToken}));
+  list.push(condition);
+
+  if(source.on('{')) {
+    // we use "begin" here to avoid an an IIFE wrapper:
+    list.push(reader.read_delimited_list(source, '{', '}', [sl.atom('begin')]));
+  }
+  else {
+    // a single form for the true path:
+    list.push(reader.read(source));
+  }
+
+  // note: if there's an else they *must* use the keyword "else"
+  if(source.on('else')) {
+    // there's an else clause
+    source.skip_text('else');
+    if(source.on('{')) {
+      // we use "begin" here to avoid an an IIFE wrapper:
+      list.push(reader.read_delimited_list(source, '{', '}', [sl.atom('begin')]));
+    }
+    else {
+      // a single form for the else path:
+      list.push(reader.read(source));
+    }
+  }
+
+  list.__parenoptional = true;
+  return list;
+};
+
+// return
+// it's odd to even consider having return in a lisp (where everything
+// is an expression).  Yet the statement/expression distinction is
+// ingrained in javascript programmers.  And the lack of statements
+// makes sugarlisp's generated code more complex (lots of IIFEs) where
+// it has to ensure everything can compose as an expression.
+exports['return'] = function(source) {
+
+  // is this a "return <value>" or a "return;" (i.e. return undefined)?
+  // note:  we *require* the semicolon if they're returning undefined
+  //   (otherwise they can literally do "return undefined")
+  var returnNothing = source.on("return;");
+  var list = sl.list(sl.atom("return", {token: source.next_token('return')}));
+  if(!returnNothing) {
+    list.push(reader.read(source));
+  }
+  list.__parenoptional = true;
+  return list;
+};
+
+// for statement
+exports['for'] = function(source) {
+
+  var forToken = source.next_token('for');
+  var list = sl.list(sl.atom("for", {token: forToken}));
+  if(source.on('(')) {
+    source.skip_text('(');
+    // initializer
+    list.push(reader.read(source));
+    // condition
+    list.push(reader.read(source));
+    // final expr
+    list.push(reader.read(source));
+    if(!source.on(')')) {
+      source.error("Missing expected ')'" + source.snoop(10));
+    }
+    source.skip_text(')');
+    if(source.on('{')) {
+      list.push(reader.read_delimited_list(source, '{', '}', [sl.atom("begin")]));
+    }
+    else {
+      list.push(reader.read(source));
+    }
+  }
+  else {
+    source.error("Missing expected '('");
+  }
+
+  list.__parenoptional = true;
+  return list;
+};
+
+// switch statement
+exports['switch'] = function(source) {
+  var switchToken = source.next_token('switch');
+  var switchon = reader.read_wrapped_delimited_list(source, '(', ')');
+  var list = sl.list(sl.atom("switch", {token: switchToken}));
+  list.push(switchon);
+
+  if(!source.on('{')) {
+    source.error("The body of a switch must be wrapped in {}");
+  }
+  source.skip_token('{');
+
+  var read_case_body = function(source) {
+    var body = sl.list(sl.atom("begin"));
+    // read up till the *next* case/default or the end:
+    while(!source.eos() && !source.on(/case|default|}/g)) {
+      var nextform = reader.read(source);
+      // some "directives" don't return an actual form:
+      if(!reader.isignorableform(nextform)) {
+        body.push(nextform);
+      }
+    }
+    return body;
+  };
+
+  var token;
+  while (!source.eos() && (token = source.peek_token()) && token && token.text !== '}') {
+
+    // the s-expression is like cond - in pairs:
+    // (note the default can't be "true" like cond - switches match *values*)
+    var casetoken = source.next_token();
+    var caseval = casetoken.text === 'case' ?
+                    reader.read(source) : sl.atom('default');
+    if(!source.on(":")) {
+      source.error('Missing ":" after switch case?');
+    }
+    source.skip_token(":");
+    list.push(caseval);
+    list.push(read_case_body(source));
+  }
+  if (!token || source.eos()) {
+      source.error('Missing "}" on switch body?', switchToken);
+  }
+  var endToken = source.next_token('}'); // skip the '}' token
+  list.setClosing(endToken);
+
+  return list;
+};
+
+exports['do'] = reader.parenfree(1, {bracketed: 1});
+
 // paren free "while" takes a condition and a body
-exports['while'] = reader.parenfree(2, {parenthesizedFirst: true});
-// paren free "times" takes a var, count, and body
-exports['times'] = reader.parenfree(3);
+exports['while'] = reader.parenfree(2, {parenthesized: 1, bracketed: 2});
+// paren free "dotimes" takes (var, count) then body
+exports['dotimes'] = reader.parenfree(2, {parenthesized: 1, bracketed: 2});
 // paren free "each" takes a list/array plus a function called with: each element,
 // the position in the list, and the whole list.
 exports['each'] = reader.parenfree(2);
-
-/*
-OLD
-// disambiguate / for div versus regexes
-// see .e.g.
-//   http://stackoverflow.com/questions/5519596/when-parsing-javascript-what-determines-the-meaning-of-a-slash
-exports['/'] = function(source, text) {
-
-  var slashyregex = function(source) {
-    var matched;
-    // note the "last token" chars are those used by jslint
-console.log("IN SLASHYREGEX lastToken is:", source.lastToken.text);
-    if (source.on("/") && (source.lastToken &&
-        "(,=:[!&|?{};".indexOf(source.lastToken.text) !== -1))
-    {
-      matched = source.peek_delimited_token("/");
-      if(matched) {
-        matched = matched.text;
-      }
-    }
-    return matched;
-  };
-
-  if(slashyregex(source)) {
-    // desugar to core (regex ..)
-    return sl.list("regex",
-                  sl.addQuotes(sl.valueOf(rfuncs.read_delimited_text(source, "/", "/",
-                    {includeDelimiters: false}))));
-  }
-  else {
-    // this was just a plain old '/' by itself
-    return reader.symbol(source, text);
-  }
-}
-*/

@@ -73,24 +73,24 @@ console.log(x);
 
 // Comparisons
 console.log('AND SOME COMPARISONS...');
-console.log(if (7 === 2) { "7 === 2!" } else { "7 does not === 2" });
-console.log(if (7 !== 2) { "7 does not == 2" } else { "7 == 2 ?!" });
+console.log(if? (7 === 2) "7 === 2!" else "7 does not === 2");
+console.log(if? (7 !== 2) "7 does not == 2" else "7 == 2 ?!");
 
-console.log(if (7 > 2) { "7 greater than 2" } else { "7 not greater than 2 ?!" });
-console.log(if (7 >= 2) { "7 greater than or equal to 2" } else { "7 not greater or equal to 2 ?!" });
+console.log(if? (7 > 2) "7 greater than 2" else "7 not greater than 2 ?!");
+console.log(if? (7 >= 2) "7 greater than or equal to 2" else "7 not greater or equal to 2 ?!");
 
-console.log(if (7 < 2) { "7 less than 2 ?!" } else { "7 not less than 2" });
-console.log(if (7 <= 2) { "7 less than or equal to 2 ?!" } else { "7 not less than or equal to 2" });
+console.log(if? (7 < 2) "7 less than 2 ?!" else "7 not less than 2");
+console.log(if? (7 <= 2) "7 less than or equal to 2 ?!" else "7 not less than or equal to 2");
 
-console.log(if ((7 <= 2) || (7 >= 2)) { "false || true passed" } else { "false || true failed" });
-console.log(if ((7 <= 2) && (7 >= 2)) { "false && true is true ?!" } else { "false && true is false" });
+console.log(if? ((7 <= 2) || (7 >= 2)) "false || true passed" else "false || true failed");
+console.log(if? ((7 <= 2) && (7 >= 2)) "false && true is true ?!" else "false && true is false");
 
 // plus some type conversion comparisons
-console.log(if (7 == "7") { "it said 7 == '7'" } else { "it said 7 not == '7' ?!" });
-console.log(if (7 != "7") { "it said 7 != '7' ?!" } else { "it said 7 == '7'" });
+console.log(if? (7 == "7") "it said 7 == '7'" else "it said 7 not == '7' ?!");
+console.log(if? (7 != "7") "it said 7 != '7' ?!" else "it said 7 == '7'");
 
-console.log(if (7 === "7") { "it said 7 === '7' !?" } else { "it said 7 not === '7'" });
-console.log(if (7 !== "7") { "it said 7 !== '7'" } else { "it said 7 not !== '7' ?!" });
+console.log(if? (7 === "7") "it said 7 === '7' !?" else "it said 7 not === '7'");
+console.log(if? (7 !== "7") "it said 7 !== '7'" else "it said 7 not !== '7' ?!");
 
 console.log('NOW TESTS FOCUSING ON PRECEDENCE...');
 

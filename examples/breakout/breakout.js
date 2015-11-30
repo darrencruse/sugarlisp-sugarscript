@@ -63,14 +63,13 @@ function drawBricks() {
   return bricks.forEach(function(___elem, ___i, ___oa) {
     return ___elem.forEach(function(___val, ___j, ___ia) {
       return (function(val, x, y, arr) {
-        return (val ?
-          (function() {
-            var xpos = (((x * brickWidth)) + ((brickMargin / 2)));
-            var ypos = ((y * brickHeight) + (brickMargin / 2));
-            var width = (brickWidth - brickMargin);
-            var height = (brickHeight - brickMargin);
-            return context.fillRect(xpos, ypos, width, height);
-          })() : undefined);
+        if (val) {
+          var xpos = (((x * brickWidth)) + ((brickMargin / 2)));
+          var ypos = ((y * brickHeight) + (brickMargin / 2));
+          var width = (brickWidth - brickMargin);
+          var height = (brickHeight - brickMargin);
+          context.fillRect(xpos, ypos, width, height);
+        };
       })(___val, ___j, ___i, ___ia, ___oa);
     });
   });
@@ -83,43 +82,35 @@ function hitHorizontal() {
 }
 
 function hitVertical() {
-  return (((ballY < 0)) ?
-    (function() {
-      ballVy = -ballVy;
-      return true;
-    })() :
-    (((ballY < ((brickHeight * bricksNumY)))) ?
-      (function() {
-        var bx = Math.floor((ballX / brickWidth));
-        var by = Math.floor((ballY / brickHeight));
-        return (((bx >= 0) && (bx < bricksNumX)) ?
-          (function() {
-            return (bricks[by][bx] ?
-              (function() {
-                bricks[by][bx] = false;
-                return ballVy = -ballVy;
-              })() : undefined);
-          })() :
-          true);
-      })() :
-      (((ballY >= ((canvas.height - paddleHeight)))) ?
-        (function() {
-          var paddleLeft = (paddleX - ((paddleWidth / 2)));
-          var paddleRight = (paddleX + ((paddleWidth / 2)));
-          return ((((ballX >= paddleLeft)) && ((ballX <= paddleRight))) ?
-            (function() {
-              ballVy = -ballVy;
-              return true;
-            })() :
-            (function() {
-              init();
-              return false;
-            })());
-        })() :
-        (true ?
-          (function() {
-            return true;
-          })() : undefined))));
+  if ((ballY < 0)) {
+    ballVy = -ballVy;
+  } else {
+    if ((ballY < ((brickHeight * bricksNumY)))) {
+      var bx = Math.floor(((ballX / brickWidth)));
+      var by = Math.floor(((ballY / brickHeight)));
+      if ((((bx >= 0)) && ((bx < bricksNumX)))) {
+        ((bricks[by])[
+            bx
+          ] ?
+          bricks[by];
+          [
+            bx
+          ] = false; ballVy = -ballVy; : undefined);
+      };
+    } else {
+      if ((ballY >= ((canvas.height - paddleHeight)))) {
+        var paddleLeft = ((paddleX - ((paddleWidth / 2))));
+        var paddleRight = ((paddleX + ((paddleWidth / 2))));
+        if ((((ballX >= paddleLeft)) && ((ballX <= paddleRight)))) {
+          ballVy = -ballVy;
+        } else {
+          init();
+          return false;
+        };
+      };
+    };
+  };
+  return true;
 }
 
 function tick() {
@@ -128,23 +119,19 @@ function tick() {
   ballX = (ballX + ballVx);
   ballY = (ballY + ballVy);
   hitHorizontal();
-  return (hitVertical() ?
-    (function() {
-      circle(ballX, ballY);
-      return drawBricks();
-    })() :
-    (function() {
-      return clear();
-    })());
+  if (hitVertical()) {
+    circle(ballX, ballY);
+    drawBricks();
+  } else {
+    clear();
+  };
 }
 window.onload = function(event) {
   canvas = document.getElementById("breakout");
   context = canvas.getContext("2d");
   brickWidth = (canvas.width / bricksNumX);
   canvas.addEventListener("mousemove", function(event) {
-    return (function() {
-      return paddleX = ((event.offsetX || ((event.pageX - canvas.offsetLeft))));
-    })();
+    return paddleX = ((event.offsetX || ((event.pageX - canvas.offsetLeft))));
   });
   init();
   return window.setInterval(tick, 30);

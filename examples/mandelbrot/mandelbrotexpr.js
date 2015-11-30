@@ -33,32 +33,30 @@ function mandelbrot(r, i, maxIter) {
     (zr += r);
   };
 
-  if ((((iter === maxIter)) || ((((lr === zr)) && ((li === zi)))))) {
-    return null
-  } else {
-    return iter
-  };
+  return ((((iter === maxIter)) || ((((lr === zr)) && ((li === zi))))) ?
+    null :
+    iter);
 }
 
 function color(n) {
-  if (((typeof(n) === "undefined") || (n === null))) {
-    return "rgb(0,0,0)"
-  } else {
-    n = (((32 * n)) % 768);
-    var rgb = (((n < 256)) ? [
-        ((255 - n)),
-        n,
-        0
-      ] :
-      (((n < 512)) ? [
-          0, ((511 - n)), ((n - 256))
+  return (((typeof(n) === "undefined") || (n === null)) ?
+    "rgb(0,0,0)" :
+    (function() {
+      n = (((32 * n)) % 768);
+      var rgb = (((n < 256)) ? [
+          ((255 - n)),
+          n,
+          0
         ] :
-        (true ? [
-          ((n - 512)),
-          0, ((767 - n))
-        ] : undefined)));
-    return ["rgb(", rgb[0], ",", rgb[1], ",", rgb[2], ")"].join('');
-  };
+        (((n < 512)) ? [
+            0, ((511 - n)), ((n - 256))
+          ] :
+          (true ? [
+            ((n - 512)),
+            0, ((767 - n))
+          ] : undefined)));
+      return ["rgb(", rgb[0], ",", rgb[1], ",", rgb[2], ")"].join('');
+    })());
 }
 
 var params = {
@@ -85,32 +83,36 @@ function draw() {
 
 draw();
 document.addEventListener("keyup", function(e) {
-  switch (e.keyCode) {
-    case 81:
+  return ((e.keyCode === 81) ?
+    (function() {
       (params.range *= ((2 / 3)));
       ++params.maxIter;
-      draw();
-      break;
-    case 87:
-      (params.i -= ((params.range / 3)));
-      draw();
-      break;
-    case 69:
-      (params.range *= ((3 / 2)));
-      --params.maxIter;
-      draw();
-      break;
-    case 65:
-      (params.r -= ((params.range / 3)));
-      draw();
-      break;
-    case 83:
-      (params.i += ((params.range / 3)));
-      draw();
-      break;
-    case 68:
-      (params.r += ((params.range / 3)));
-      draw();
-      break;
-  };
+      return draw();
+    })() :
+    ((e.keyCode === 87) ?
+      (function() {
+        (params.i -= ((params.range / 3)));
+        return draw();
+      })() :
+      ((e.keyCode === 69) ?
+        (function() {
+          (params.range *= ((3 / 2)));
+          --params.maxIter;
+          return draw();
+        })() :
+        ((e.keyCode === 65) ?
+          (function() {
+            (params.r -= ((params.range / 3)));
+            return draw();
+          })() :
+          ((e.keyCode === 83) ?
+            (function() {
+              (params.i += ((params.range / 3)));
+              return draw();
+            })() :
+            ((e.keyCode === 68) ?
+              (function() {
+                (params.r += ((params.range / 3)));
+                return draw();
+              })() : undefined))))));
 });

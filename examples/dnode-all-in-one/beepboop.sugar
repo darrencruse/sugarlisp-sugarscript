@@ -9,7 +9,7 @@
 
 var dnode = require('dnode');
 
-#if (transpile.for === "server") {
+#if (transpile["for"] === "server") {
 
   var remote = {
      transform: (s, cb) => {
@@ -25,7 +25,7 @@ var dnode = require('dnode');
   console.log("Listening for beeps...");
 }
 
-#if (transpile.for === "client") {
+#if (transpile["for"] === "client") {
 
   var d = dnode.connect(5004);
   d.on('remote', (remote) => {
