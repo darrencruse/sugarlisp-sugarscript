@@ -26,7 +26,7 @@
 
 	macro $listener (domObj eventName ...rest) {
 	  (~domObj.addEventListener ~eventName (event) => ~rest)
-        }
+  }
 
 	var canvas = null;
 	var context = null;
@@ -84,49 +84,39 @@
 	}
 
 	function hitHorizontal () {
-	  ballVx = if(ballX < 0 || ballX > canvas.width) -ballVx else ballVx;
+	  ballVx = if? (ballX < 0 || ballX > canvas.width) -ballVx else ballVx;
 	}
 
-	// even though things are working the lispyx version flickers more
-	// than the lispy version - I haven't figured out exactly why but
-	// I have narrowed it down to *something* being different in the
-	// generated code for this hitVertical function.
+	function hitVertical() {
+	  if (ballY < 0) {
+	    ballVy = -ballVy;
+	  } else {
+	    if (ballY < (brickHeight * bricksNumY)) {
+	      var bx = Math.floor((ballX / brickWidth));
+	      var by = Math.floor((ballY / brickHeight));
 
-	function hitVertical () {
-	  cond {
-	    case (ballY < 0) {
-	      ballVy = -ballVy;
-	      true;
-	    }
-	    case (ballY < (brickHeight * bricksNumY)) {
-	      var bx = Math.floor(ballX / brickWidth);
-	      var by = Math.floor(ballY / brickHeight);
-	      if(bx >= 0 && bx < bricksNumX) {
-	        if(get bx bricks[by]) {
-	          (set bx bricks[by] false);
+	      if ((bx >= 0) && (bx < bricksNumX)) {
+	        //broken: if (bricks[by][bx]) {
+	        if ((get bx (get by bricks))) {
+	          //broken: bricks[by][bx] = false;
+	          (set bx (get by bricks) false)
 	          ballVy = -ballVy;
 	        }
 	      }
-	      else {
-	        true;
-				}
-	    }
-	    case (ballY >= (canvas.height - paddleHeight)) {
-	      var paddleLeft = paddleX - paddleWidth / 2;
-	      var paddleRight = paddleX + paddleWidth / 2;
-	      if ((ballX >= paddleLeft) && (ballX <= paddleRight)) {
-	        ballVy = -ballVy;
-	        true;
+	    } else {
+	      if (ballY >= (canvas.height - paddleHeight)) {
+	        var paddleLeft = (paddleX - (paddleWidth / 2));
+	        var paddleRight = (paddleX + (paddleWidth / 2));
+	        if ((ballX >= paddleLeft) && (ballX <= paddleRight)) {
+	          ballVy = -ballVy
+	        } else {
+	          init();
+	          return false;
+	        }
 	      }
-	      else {
-	        init();
-	        false;
-	      }
-	    }
-	    default {
-	      true;
 	    }
 	  }
+	  return true;
 	}
 
 	function tick () {
@@ -170,11 +160,11 @@
 	// and these are specified via the --for command line option
 	// note these names are up to you - you could pass others
 	// e.g. "client" (instead of "browser"), "chrome", "native", etc.
-	#if (transpile.for === "browser")
+	#if (transpile["for"] === "browser")
 	  console.log("transpiled for browser");
-	#if (transpile.for === "server")
+	#if (transpile["for"] === "server")
 	  console.log("transpiled for server");
-	#if (undefined?(transpile.for))
+	#if (undefined?(transpile["for"]))
 	  console.log("transpiling for browser or server not specified");
 
 	</script>

@@ -88,14 +88,12 @@ function hitVertical() {
     if ((ballY < ((brickHeight * bricksNumY)))) {
       var bx = Math.floor(((ballX / brickWidth)));
       var by = Math.floor(((ballY / brickHeight)));
+
       if ((((bx >= 0)) && ((bx < bricksNumX)))) {
-        ((bricks[by])[
-            bx
-          ] ?
-          bricks[by];
-          [
-            bx
-          ] = false; ballVy = -ballVy; : undefined);
+        if (bricks[by][bx]) {
+          bricks[by][bx] = false;
+          ballVy = -ballVy;
+        };
       };
     } else {
       if ((ballY >= ((canvas.height - paddleHeight)))) {
