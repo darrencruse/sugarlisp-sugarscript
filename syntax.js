@@ -96,6 +96,7 @@ function handleFuncs(source, text) {
   // note the use of next_token here (as oppsed to reader.read) ensures "fn(x)"
   // in e.g. "function fn(x)" isn't read as a *call* i.e. "(fn x)".
   var fName;
+  // note here was can only allow valid *javascript* function names
   if(source.on(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g)) {
     var token = source.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g);
     fName = sl.atom(token.text, {token: token});
@@ -264,8 +265,9 @@ exports['macro'] = function(source) {
 
   // the next form tells if it's a named or anonymous macro
   var mName;
-  if(source.on(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g)) {
-    var token = source.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g);
+  // note here we do allow "lispy names" (i.e. more legal chars than javascript)
+  if(source.on(/[a-zA-Z_$][0-9a-zA-Z_$\.\?\-\>]*/g)) {
+    var token = source.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.\?\-\>]*/g);
     mName = sl.atom(token.text, {token: token});
     list.push(mName);
   }
@@ -435,12 +437,13 @@ exports['*'] = reader.infix(17);
 exports['%'] = reader.infix(17);
 exports['+'] = reader.infix(16);
 
-// have commented the prefix line below because with it, an
-// example like "(- 1 5)" gets parsed as "((- 1) 5)" !!
-// but without it the space between the "-" and the number
-// becomes properly significant
+// note that right now in sugarscript e.g. "(- 1 5)" gets parsed as "((- 1) 5)"
+// have not found an easy fix - ignoring for now (after all they would most likely
+// use infix in sugarscript anyway).  Possibly some special case handling is
+// needed - though it may be best in the end to *not* support prefix notation
+// in sugarscript at all ("simplicity" and "reliability" > "flexibility"!!)
 exports['-'] = reader.operator({
-//  prefix: reader.prefix(18, { assoc: "right" }),
+  prefix: reader.prefix(18, { assoc: "right" }),
   infix: reader.infix(16)
 });
 
@@ -598,7 +601,7 @@ exports['for'] = function(source) {
     }
   }
   else {
-    source.error("Missing expected '('");
+    source.error("A for loop must be surrounded by ()");
   }
 
   list.__parenoptional = true;
