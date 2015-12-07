@@ -4,4 +4,4 @@ console.log("transpiled on server (window object doesn't exist");
 
 console.log("transpiled on server");
 
-console.log("transpiled for server");
+console.log("transpile for client or server not specified");

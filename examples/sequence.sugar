@@ -1,5 +1,6 @@
-// http://lispyscript.com
-// LispyScript sequenced callback example in Dialect-X
+//
+// SugarScript sequenced callback example
+// The sequence macro comes from LispyScript http://lispyscript.com
 // No need for nested callbacks. Just write your callbacks in a sequence and pass "(next)" as
 // your callback, which will set the next function in the sequence as your callback.
 //

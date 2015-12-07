@@ -173,9 +173,9 @@ dayName = ((dayNum === 0) ?
             ((dayNum === 6) ?
               "sat" : undefined)))))));
 console.log(["case said today is ", dayName].join(''));
-var dayMsg = (((dayNum === 5)) ?
+var dayMsg = ((dayNum === 5) ?
   "tgif!!" :
-  ((((dayNum === 0) || (dayNum === 6))) ?
+  (((dayNum === 0) || (dayNum === 6)) ?
     "yahoo it's the weekend!" :
     (true ?
       "blech gotta work today it's a weekday" : undefined)));
@@ -206,6 +206,53 @@ console.log('same but using forEach...');
 ].forEach(function(el) {
   console.log(el);
 });
+console.log("a list comprehension of ['a','b','c'] with [3,4,5]");
+console.log((function(___monad) {
+  var mBind = ___monad.mBind,
+    mResult = ___monad.mResult,
+    mZero = ___monad.mZero,
+    mPlus = ___monad.mPlus;
+  var ____mResult = function(___arg) {
+    return (((typeof(___arg) === "undefined") && (!(typeof(mZero) === "undefined"))) ?
+      mZero :
+      mResult(___arg));
+  };
+  return mBind([
+    'a',
+    'b',
+    'c'
+  ], function(letters) {
+    return mBind([
+      3,
+      4,
+      5
+    ], function(numbers) {
+      return (function() {
+        return ____mResult([
+          letters,
+          numbers
+        ]);
+      })();
+    });
+  });
+})({
+  mBind: function(mv, mf) {
+    return Array.prototype.map.call(mv, mf).reduce(function(accum, val) {
+      return accum.concat(val);
+    }, []);
+  },
+  mResult: function(v) {
+    return [
+      v
+    ];
+  },
+  mZero: [],
+  mPlus: function() {
+    return Array.prototype.slice.call(arguments).reduce(function(accum, val) {
+      return accum.concat(val);
+    }, []);
+  }
+}));
 console.log('arrow functions bind the outer "this":');
 
 function Ubertest(x) {

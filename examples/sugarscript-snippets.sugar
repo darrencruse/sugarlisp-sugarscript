@@ -236,6 +236,10 @@ each [1, 2, 3] (elem i list) => console.log(elem)
 console.log('same but using forEach...');
 [1,2,3].forEach((el) => console.log(el));
 
+// a list comprehension
+console.log("a list comprehension of ['a','b','c'] with [3,4,5]");
+console.log(list-of( (letters ['a', 'b', 'c'] numbers [3, 4, 5]) [letters, numbers]));
+
 // testing lexical this
 console.log('arrow functions bind the outer "this":');
 function Ubertest(x) {

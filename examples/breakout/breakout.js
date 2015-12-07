@@ -64,7 +64,7 @@ function drawBricks() {
     return ___elem.forEach(function(___val, ___j, ___ia) {
       return (function(val, x, y, arr) {
         if (val) {
-          var xpos = (((x * brickWidth)) + ((brickMargin / 2)));
+          var xpos = ((x * brickWidth) + (brickMargin / 2));
           var ypos = ((y * brickHeight) + (brickMargin / 2));
           var width = (brickWidth - brickMargin);
           var height = (brickHeight - brickMargin);
@@ -85,21 +85,21 @@ function hitVertical() {
   if ((ballY < 0)) {
     ballVy = -ballVy;
   } else {
-    if ((ballY < ((brickHeight * bricksNumY)))) {
-      var bx = Math.floor(((ballX / brickWidth)));
-      var by = Math.floor(((ballY / brickHeight)));
+    if ((ballY < (brickHeight * bricksNumY))) {
+      var bx = Math.floor((ballX / brickWidth));
+      var by = Math.floor((ballY / brickHeight));
 
-      if ((((bx >= 0)) && ((bx < bricksNumX)))) {
+      if (((bx >= 0) && (bx < bricksNumX))) {
         if (bricks[by][bx]) {
           bricks[by][bx] = false;
           ballVy = -ballVy;
         };
       };
     } else {
-      if ((ballY >= ((canvas.height - paddleHeight)))) {
-        var paddleLeft = ((paddleX - ((paddleWidth / 2))));
-        var paddleRight = ((paddleX + ((paddleWidth / 2))));
-        if ((((ballX >= paddleLeft)) && ((ballX <= paddleRight)))) {
+      if ((ballY >= (canvas.height - paddleHeight))) {
+        var paddleLeft = (paddleX - (paddleWidth / 2));
+        var paddleRight = (paddleX + (paddleWidth / 2));
+        if (((ballX >= paddleLeft) && (ballX <= paddleRight))) {
           ballVy = -ballVy;
         } else {
           init();
@@ -129,7 +129,7 @@ window.onload = function(event) {
   context = canvas.getContext("2d");
   brickWidth = (canvas.width / bricksNumX);
   canvas.addEventListener("mousemove", function(event) {
-    return paddleX = ((event.offsetX || ((event.pageX - canvas.offsetLeft))));
+    return paddleX = (event.offsetX || (event.pageX - canvas.offsetLeft));
   });
   init();
   return window.setInterval(tick, 30);

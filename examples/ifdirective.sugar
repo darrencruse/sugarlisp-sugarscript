@@ -16,7 +16,7 @@
   console.log("transpiled on server");
 
 // and these can be specified via the --for command line option
-// e.g. 
+// e.g.
 //   "sugar --for=client testIfDirective.slisp"
 // note the "for" names are up to you - you could pass others
 // e.g. "browser" (instead of "client"), "chrome", "native", etc.
@@ -29,4 +29,3 @@
 
 #if (undefined?(transpile["for"]))
   console.log("transpile for client or server not specified");
-
