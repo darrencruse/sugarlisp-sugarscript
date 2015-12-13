@@ -1,7 +1,6 @@
-var sl = require('sugarlisp-core/types'),
+var sl = require('sugarlisp-core/sl-types'),
     src = require('sugarlisp-core/source'),
     reader = require('sugarlisp-core/reader'),
-    corerfuncs = require('sugarlisp-core/readfuncs'),
     coresyntax = require('sugarlisp-core/syntax');
 
 // the opening paren is treated as an operator in sugarscript
@@ -60,30 +59,6 @@ function tradfncalltosexpr(source, opSpec, leftForm, openingParenForm) {
   // whatever preceded the opening paren becomes the beginning of the list:
   return reader.read_delimited_list(source, openingParenForm, ')', [leftForm]);
 }
-
-// traditional array/object access with name then bracket i.e. arr[(index or prop)]
-// note:  they *must* omit spaces between variable name and the opening bracket
-exports['__sugarscript_objarraylookup'] =
-{
-  // legal variable name then square bracket
-  match:  /[a-zA-Z_$][0-9a-zA-Z_$\.]*\[/g,
-  // set priority early so e.g. "arr[" is matched not just "arr"
-  priority: 99,
-  read:
-    function(source) {
-      var form;
-      // note: can't use peek_token below
-      //   (since that uses the syntax table that's an infinite loop!)
-      var token = source.next_delimited_token(undefined, "[");
-      if(token) {
-        form = sl.list(sl.atom('get', {token: token}),
-                          reader.read(source),
-                          sl.atom(token.text));
-        source.skip_token("]");
-      }
-      return form;
-    }
-};
 
 // parenfree function declarations
 function handleFuncs(source, text) {
@@ -477,7 +452,7 @@ exports['/'] = reader.operator({
 function regex2expr(source, opSpec, openingSlashForm) {
   // desugar to core (regex ..)
   return sl.list("regex",
-                sl.addQuotes(sl.valueOf(corerfuncs.read_delimited_text(source, undefined, "/",
+                sl.addQuotes(sl.valueOf(reader.read_delimited_text(source, undefined, "/",
                   {includeDelimiters: false}))));
 }
 

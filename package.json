@@ -1,6 +1,6 @@
 {
   "name": "sugarlisp-sugarscript",
-  "description": "A lisp that looks like javascript!",
+  "description": "It's a lisp that looks like javascript!",
   "keywords": [
     "javascript",
     "language",
@@ -11,7 +11,7 @@
     "lisp"
   ],
   "author": "Darren Cruse",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "licenses": [
     {
       "type": "MIT",
