@@ -4,7 +4,7 @@
 //
 // this gets split into client and server using compile time #if
 // directives selected using sugar's "--for" option (see
-// make-dnode-std.sh).
+// makem.sh).
 //
 
 var dnode = require('dnode');
