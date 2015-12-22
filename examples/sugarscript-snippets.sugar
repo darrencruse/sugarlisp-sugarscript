@@ -1,5 +1,5 @@
 // Some example SugarScript dialect code snippets
-// compare to the examples in core-snippets.slisp of SugarLisp Core
+// (compare to SugarLisp Plus plus-snippets.slisp)
 
 console.log((str "Hello" " World"));
 
@@ -29,28 +29,29 @@ catch(err) {
   console.log(err);
 }
 
-// if transpiles to a ternary expression:
-if (undefined? window) {
+// "if?" transpiles to a javascript "?" (ternary) *expression*:
+if? (undefined? window) {
   console.log("Not Running on browser");
 } else {
   console.log("Running on browser");
 }
 
 // else is optional
-if (1 != 2) {
+if? (1 != 2) {
   console.log("Nos are not equal")
 }
 
+// note you can still use a regular ternary if you prefer:
+var ten = 10;
+console.log(ten > 0 ? "ten is positive" : "ten is negative");
+
+// plain "if" transpiles to a javascript *statement*:
 if (object? console) {
   console.log("console is an object");
 }
 else {
   console.log("console is not an object");
 }
-
-// but you can still use a regular ternary if you like:
-var ten = 10;
-console.log(ten > 0 ? "ten is positive" : "ten is negative");
 
 // arrays
 var arr = [1, 2, 3, 4, 5];
