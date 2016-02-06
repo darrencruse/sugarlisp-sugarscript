@@ -30,11 +30,7 @@ catch(err) {
 }
 
 // "if?" transpiles to a javascript "?" (ternary) *expression*:
-if? (undefined? window) {
-  console.log("Not Running on browser");
-} else {
-  console.log("Running on browser");
-}
+console.log(if? (undefined? window) { "We are not " } else { "We are " } "running on browser");
 
 // else is optional
 if? (1 != 2) {
@@ -106,7 +102,7 @@ mylet2( (name, email, tel) ("John", "john@example.com", "555-555-5556")
   console.log("test again");
 }
 
-// regular expressions in sugarscript can omit the leading "#" (which core requires)
+// regular expressions in sugarscript can omit the leading "#" (which plus requires)
 var re = /[a-zA-Z0-9]/;
 // and make sure plain / still works right
 var fn = function (x y) { x / y };

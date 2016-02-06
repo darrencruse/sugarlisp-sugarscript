@@ -1,4 +1,4 @@
-//#transpile { to: 'core' }
+//#transpile { to: 'tokens' }
 
 var http = require("http");
 

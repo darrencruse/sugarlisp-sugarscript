@@ -1,7 +1,5 @@
 var sl = require('sugarlisp-core/sl-types'),
-    src = require('sugarlisp-core/source'),
-    reader = require('sugarlisp-core/reader'),
-    coresyntax = require('sugarlisp-core/syntax');
+    reader = require('sugarlisp-core/reader');
 
 // the opening paren is treated as an operator in sugarscript
 // A normal parenthesized expression "(x)" is considered a prefix operator
@@ -20,25 +18,25 @@ exports['('] = reader.operator({
 });
 
 // this is just a helper for the above
-function readparenthesizedlist(source, opSpec, openingParenForm) {
+function readparenthesizedlist(lexer, opSpec, openingParenForm) {
   // note since '(' is defined as a prefix operator the '(' has already been read
   // read_delimited_list infers this because we pass openingParenForm below
-  return reader.read_delimited_list(source, openingParenForm, ')');
+  return reader.read_delimited_list(lexer, openingParenForm, ')');
 }
 
 // NOT SURE WE NEEDED THIS AFTER ALL
 // sugarscript (esp) has customized read handlers for paren-free
 // "function(", "if(", etc. This "beforeRead" function makes sure
 // the reader doesn't treat those as normal function calls.
-// function noCustomReader(source, opSpec, leftForm) {
+// function noCustomReader(lexer, opSpec, leftForm) {
 //   var retry;
-//   var dialect = reader.get_current_dialect(source);
+//   var dialect = reader.get_current_dialect(lexer);
 //   if(sl.isAtom(leftForm) &&
 //     dialect.syntax[leftForm.text] &&
 //     !dialect.syntax[leftForm.text] == reader.symbol)
 //   {
 //     // let the other handlers take it:
-//     retry = reader.retry_match;
+//     retry = reader.retry;
 //   }
 //   return retry;
 // }
@@ -47,7 +45,7 @@ function readparenthesizedlist(source, opSpec, openingParenForm) {
 
 // this is just a helper for the above
 // note the reader calls tradfncalltosexpr *after* reading the opening paren
-function tradfncalltosexpr(source, opSpec, leftForm, openingParenForm) {
+function tradfncalltosexpr(lexer, opSpec, leftForm, openingParenForm) {
 
 // do we really need this?
   // if(opSpec.options.altprefix) {
@@ -57,59 +55,48 @@ function tradfncalltosexpr(source, opSpec, leftForm, openingParenForm) {
   // }
 
   // whatever preceded the opening paren becomes the beginning of the list:
-  return reader.read_delimited_list(source, openingParenForm, ')', [leftForm]);
+  return reader.read_delimited_list(lexer, openingParenForm, ')', [leftForm]);
 }
 
 // parenfree function declarations
-function handleFuncs(source, text) {
+function handleFuncs(lexer, text) {
 
   // note we use "text" so we can handle both "function" and "function*"
-  var functionToken = source.next_token(text);
+  var functionToken = lexer.next_token(text);
   var list = sl.list(sl.atom(text, {token: functionToken}));
 
   // the next form tells if it's a named, anonymous, or match function
   // note the use of next_token here (as oppsed to reader.read) ensures "fn(x)"
   // in e.g. "function fn(x)" isn't read as a *call* i.e. "(fn x)".
   var fName;
-  // note here was can only allow valid *javascript* function names
-  if(source.on(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g)) {
-    var token = source.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g);
+  // note here we can only allow valid *javascript* function names
+  // (because this ultimately generates real javascript named functions)
+  if(lexer.on(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g)) {
+    var token = lexer.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g);
     fName = sl.atom(token.text, {token: token});
     list.push(fName);
   }
   // args
-  if(source.on('(')) {
-    var fArgs = reader.read_delimited_list(source, '(', ')', undefined);
+  if(lexer.on('(')) {
+    var fArgs = reader.read_delimited_list(lexer, '(', ')', undefined);
     list.push(fArgs);
   }
-  else if(source.on('~')) {
+  else if(lexer.on('~')) {
     // a macro declaring a function with unquoted args:
-    list.push(reader.read(source));
+    list.push(reader.read(lexer));
   }
   var fBody;
-  if(source.on('{')) {
-    // by default we assume there's no need for a "do" IIFE wrapper -
-    // so we read what's *inside* the curly braces:
-    fBody = reader.read_delimited_list(source, '{', '}');
-    // our infix translation sometimes leads to extra wrapper parens:
-// COMMENTING I *THINK* THIS NOT NEEDED ANYMORE?
-    // if(fBody.length === 1 && sl.isList(fBody[0])) {
-    //    fBody = fBody[0]; // unwrap
-    // }
-
-    // sometimes we need an IIFE wrapper
-    if(sl.isList(fBody) && fBody.length > 0 && sl.isList(fBody[0])) {
-      // yet function* can't have it cause you can't yield in a normal function!
-      fBody.unshift(sl.atom(text !== 'function*' ? "begin" : "begin"));
-    }
+  if(lexer.on('{')) {
+    // read what's inside the curly braces as a (begin..) block:
+    fBody = reader.read_delimited_list(lexer, '{', '}', ["begin"]);
     list.push(fBody);
-  } else if(source.on('(')) {
-    fBody = reader.read(source);
+  } else if(lexer.on('(')) {
+    fBody = reader.read(lexer);
     list.push(fBody);
   }
 
   if(!(fName || fBody)) {
-    source.error("malformed function declaration - missing arguments or body");
+    lexer.error("malformed function declaration - missing arguments or body");
   }
 
   list.__parenoptional = true;
@@ -129,43 +116,39 @@ exports['yield*'] = reader.parenfree(1);
 // sugarscript lets them omit parens on "export"
 exports['export'] = reader.parenfree(2);
 
-// commas are needed in sugarscript e.g. in something like "var x,y"
-// to know where the unparenthesized-yet-variable-length form ends
-exports[','] = reader.symbol;
-
 // "var" precedes a comma separated list of either:
 //    name
 // or:
 //    name = val
 //
 
-exports['var'] = function(source, text) {
+exports['var'] = function(lexer, text) {
 
-  var varToken = source.next_token(text);
+  var varToken = lexer.next_token(text);
   var list = sl.list(sl.atom("var", {token: varToken}));
   var moreVars = true;
   while(moreVars) {
-    var varNameToken = source.next_token();
+    var varNameToken = lexer.next_token();
     var validName = /^[a-zA-Z_$][0-9a-zA-Z_$]*$/;
     if (!validName.test(varNameToken.text)) {
-      source.error("Invalid character in var name", varNameToken);
+      lexer.error("Invalid character in var name", varNameToken);
     }
 
     var varNameSym = sl.atom(varNameToken);
     list.push(varNameSym);
 
-    if(source.on('=')) {
+    if(lexer.on('=')) {
       // it's got an initializer
-      source.skip_text('=');
-      list.push(reader.read(source));
+      lexer.skip_text('=');
+      list.push(reader.read(lexer));
     }
     else {
       list.push("undefined");
     }
 
-    moreVars = source.on(',');
+    moreVars = lexer.on(',');
     if(moreVars) {
-      source.skip_text(',');
+      lexer.skip_text(',');
     }
   }
 
@@ -174,10 +157,10 @@ exports['var'] = function(source, text) {
 
 // paren-free new keyword
 // note lispy core expects e.g. (new Date), (new Date "October 13, 1975 11:13")
-exports['new'] = function(source, text) {
-  var newToken = source.next_token(text);
+exports['new'] = function(lexer, text) {
+  var newToken = lexer.next_token(text);
   var list = sl.list(sl.atom("new", {token: newToken}));
-  var classConstructor = reader.read(source);
+  var classConstructor = reader.read(lexer);
   // if(sl.isList(classConstructor)) {
   //   // splice the values in
   //   list.pushFromArray(classConstructor);
@@ -193,30 +176,30 @@ exports['new'] = function(source, text) {
 // parenfree template declarations
 // note:  the "template" overlaps the newer html dialect, but
 //   we still support "template" for backward compatibility.
-exports['template'] = function(source) {
+exports['template'] = function(lexer) {
 
-  var templateToken = source.next_token('template');
+  var templateToken = lexer.next_token('template');
   var list = sl.list(sl.atom("template", {token: templateToken}));
 
   var tName;
-  if(source.on(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g)) {
-    var token = source.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g);
+  if(lexer.on(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g)) {
+    var token = lexer.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.]*/g);
     tName = sl.atom(token.text, {token: token});
     list.push(tName);
   }
   else {
-    source.error("invalid template name");
+    lexer.error("invalid template name");
   }
   // args
-  if(source.on('(')) {
-    list.push(reader.read(source));
+  if(lexer.on('(')) {
+    list.push(reader.read(lexer));
   }
   else {
-    source.error("template arguments should be enclosed in parentheses");
+    lexer.error("template arguments should be enclosed in parentheses");
   }
 
-  if(source.on('{')) {
-    var tBody = reader.read(source);
+  if(lexer.on('{')) {
+    var tBody = reader.read(lexer);
     tBody.forEach(function(expr,i) {
         if(i > 0) {
           list.push(expr);
@@ -224,7 +207,7 @@ exports['template'] = function(source) {
     });
   }
   else {
-    source.error("template bodies in sugarscript are enclosed in {}");
+    lexer.error("template bodies in sugarscript are enclosed in {}");
   }
 
   list.__parenoptional = true;
@@ -233,36 +216,36 @@ exports['template'] = function(source) {
 
 
 // parenfree macro declarations
-exports['macro'] = function(source) {
+exports['macro'] = function(lexer) {
 
-  var macroToken = source.next_token('macro');
+  var macroToken = lexer.next_token('macro');
   var list = sl.list(sl.atom("macro", {token: macroToken}));
 
   // the next form tells if it's a named or anonymous macro
   var mName;
   // note here we do allow "lispy names" (i.e. more legal chars than javascript)
-  if(source.on(/[a-zA-Z_$][0-9a-zA-Z_$\.\?\-\>]*/g)) {
-    var token = source.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.\?\-\>]*/g);
+  if(lexer.on(/[a-zA-Z_$][0-9a-zA-Z_$\.\?\-\>]*/g)) {
+    var token = lexer.next_token(/[a-zA-Z_$][0-9a-zA-Z_$\.\?\-\>]*/g);
     mName = sl.atom(token.text, {token: token});
     list.push(mName);
   }
   // args are surrounded by parens (even in sugarlisp core)
-  if(source.on('(')) {
-    list.push(reader.read(source));
+  if(lexer.on('(')) {
+    list.push(reader.read(lexer));
   }
   else {
-    source.error("a macro declaration's arguments should be enclosed in ()");
+    lexer.error("a macro declaration's arguments should be enclosed in ()");
   }
 
   // in sugarscript the macro body is wrapped in {...}
   // note this is purely a grammar thing (it is *not* saying every macro is a "do")
   // also note that the reading of the macro body uses whatever dialects are
   // current i.e. the macro body is written in the dialect of the containing file.
-  if(source.on('{')) {
-    list.push(reader.read_wrapped_delimited_list(source, '{', '}'));
+  if(lexer.on('{')) {
+    list.push(reader.read_wrapped_delimited_list(lexer, '{', '}'));
   }
   else {
-    source.error("a macro declaration's body should be enclosed in {}");
+    lexer.error("a macro declaration's body should be enclosed in {}");
   }
 
   list.__parenoptional = true;
@@ -274,16 +257,16 @@ exports['macro'] = function(source) {
 // note: text will be either "cond" or "switch"
 /*
 DELETE?
-handleCondCase = function(source, text) {
-  var condToken = source.next_token(text);
+handleCondCase = function(lexer, text) {
+  var condToken = lexer.next_token(text);
   var list = sl.list(sl.atom(text, {token: condToken}));
   if(text === "case") {
     // switch has the item to match (cond does not)
     // as with javascript - the switch value is wrapped in parens
-    list.push(reader.read_wrapped_delimited_list(source, '(',')'));
+    list.push(reader.read_wrapped_delimited_list(lexer, '(',')'));
   }
-  if(source.on('{')) {
-    var body = reader.read_delimited_list(source, '{', '}');
+  if(lexer.on('{')) {
+    var body = reader.read_delimited_list(lexer, '{', '}');
     if((body.length % 2) === 0) {
       body.forEach(function(caseForm) {
         // the body has pairs:
@@ -297,20 +280,20 @@ handleCondCase = function(source, text) {
             list.push(caseForm[1]);
           }
           else {
-            source.error('a ' + text + ' expects "case" or "default" in its body');
+            lexer.error('a ' + text + ' expects "case" or "default" in its body');
           }
         }
         else {
-          source.error('a ' + text + ' expects "case" or "default" in its body');
+          lexer.error('a ' + text + ' expects "case" or "default" in its body');
         }
       })
     }
     else {
-      source.error("a " + text + " requires an even number of match pairs in it's body");
+      lexer.error("a " + text + " requires an even number of match pairs in it's body");
     }
   }
   else {
-    source.error("a " + text + " body should be enclosed in {}");
+    lexer.error("a " + text + " body should be enclosed in {}");
   }
 
   list.__parenoptional = true;
@@ -327,10 +310,10 @@ exports['case'] = handleCondCase;
 //   case(x) { 0 "zero"; 1 "one"; true "other"; }
 exports['cond'] = reader.parenfree(1, {
   bracketed: 1,
-  validate: function(source, forms) {
+  validate: function(lexer, forms) {
     // note the forms list *starts* with 'cond' hence the -1:
     if(((forms.length-1) % 2) !== 0) {
-      source.error("a cond requires an even number of match pairs in it's body");
+      lexer.error("a cond requires an even number of match pairs in it's body");
     }
   }
 });
@@ -338,21 +321,21 @@ exports['cond'] = reader.parenfree(1, {
 exports['case'] = reader.parenfree(2, {
   parenthesized: 1,
   bracketed: 2,
-  validate: function(source, forms) {
+  validate: function(lexer, forms) {
     // note the forms list *starts* with 'case' and match hence the -2:
     if(((forms.length-2) % 2) !== 0) {
-      source.error("a case requires an even number of match pairs in it's body");
+      lexer.error("a case requires an even number of match pairs in it's body");
     }
   }
 });
 
 // sugarscript's "match" is paren free except for parens around
 // the thing to match (like the parens in "switch", "if", etc)
-exports['match'] = function(source) {
-  var matchToken = source.next_token('match');
-  var matchAgainstList = reader.read(source);
+exports['match'] = function(lexer) {
+  var matchToken = lexer.next_token('match');
+  var matchAgainstList = reader.read(lexer);
   if(!(sl.isList(matchAgainstList))) {
-    source.error("the expression to match must be surrounded by parentheses");
+    lexer.error("the expression to match must be surrounded by parentheses");
   }
   // the parens are just syntax sugar - reach inside:
   var matchAgainst = matchAgainstList[0];
@@ -361,7 +344,7 @@ exports['match'] = function(source) {
   list.push(matchAgainst);
 
   // the match cases are expected to be a single form surrounded by {}
-  list.push(reader.read(source));
+  list.push(reader.read(lexer));
 
   list.__parenoptional = true;
   return list;
@@ -374,20 +357,20 @@ exports['match'] = function(source) {
 // sugarscript's "try" is paren free
 // note: lispy core's treats all but the final catch function as the body
 //   but sugarscript requires that a multi-expression body be wrapped in {}
-exports['try'] = function(source) {
-  var tryToken = source.next_token('try');
-  var tryBody = reader.read(source);
+exports['try'] = function(lexer) {
+  var tryToken = lexer.next_token('try');
+  var tryBody = reader.read(lexer);
   if(!(sl.isList(tryBody))) {
-    source.error("try expects a body enclosed in () or {}");
+    lexer.error("try expects a body enclosed in () or {}");
   }
-  var catchToken = source.next_token('catch');
-  var catchArgs = reader.read(source);
+  var catchToken = lexer.next_token('catch');
+  var catchArgs = reader.read(lexer);
   if(!(sl.isList(catchArgs))) {
-    source.error("give a name to the exception to catch enclosed in ()");
+    lexer.error("give a name to the exception to catch enclosed in ()");
   }
-  var catchBody = reader.read(source);
+  var catchBody = reader.read(lexer);
   if(!(sl.isList(catchBody))) {
-    source.error("the catch body must be enclosed in () or {}");
+    lexer.error("the catch body must be enclosed in () or {}");
   }
 
   var list = sl.list(sl.atom("try", {token: tryToken}));
@@ -449,41 +432,41 @@ exports['/'] = reader.operator({
   infix: reader.infix(17)
 });
 
-function regex2expr(source, opSpec, openingSlashForm) {
+function regex2expr(lexer, opSpec, openingSlashForm) {
   // desugar to core (regex ..)
   return sl.list("regex",
-                sl.addQuotes(sl.valueOf(reader.read_delimited_text(source, undefined, "/",
+                sl.addQuotes(sl.valueOf(reader.read_delimited_text(lexer, undefined, "/",
                   {includeDelimiters: false}))));
 }
 
 exports["?"] = reader.operator('infix', 'binary', ternary2prefix, 7);
 
-function ternary2prefix(source, opSpec, conditionForm, questionMarkForm) {
+function ternary2prefix(lexer, opSpec, conditionForm, questionMarkForm) {
 
-  var thenForm = reader.read(source);
-  source.skip_token(":");
-  var elseForm = reader.read(source, opSpec.precedence-1);
+  var thenForm = reader.read(lexer);
+  lexer.skip_token(":");
+  var elseForm = reader.read(lexer, opSpec.precedence-1);
   return sl.list("ternary", conditionForm, thenForm, elseForm);
 }
 
 // if? expression
-exports['if?'] = function(source) {
-  var ifToken = source.next_token('if?');
-// OLD DELETE  var condition = reader.read(source);
+exports['if?'] = function(lexer) {
+  var ifToken = lexer.next_token('if?');
+// OLD DELETE  var condition = reader.read(lexer);
 
   // as with javascript - the condition is wrapped in parens
-  var condition = reader.read_wrapped_delimited_list(source, '(',')');
+  var condition = reader.read_wrapped_delimited_list(lexer, '(',')');
 
   // if in core *is* an expression (a ternary)
   var list = sl.list(sl.atom("if?", {token: ifToken}));
   list.push(condition);
-  list.push(reader.read(source));
+  list.push(reader.read(lexer));
 
   // note: if there's an else they *must* use the keyword "else"
-  if(source.on('else')) {
+  if(lexer.on('else')) {
     // there's an else clause
-    source.skip_text('else');
-    list.push(reader.read(source));
+    lexer.skip_text('else');
+    list.push(reader.read(lexer));
   }
 
   list.__parenoptional = true;
@@ -496,34 +479,34 @@ exports['if?'] = function(source) {
 // this is really weird for a "lisp"!
 
 // if statement
-exports['if'] = function(source) {
-  var ifToken = source.next_token('if');
-  condition = reader.read_wrapped_delimited_list(source, '(', ')');
+exports['if'] = function(lexer) {
+  var ifToken = lexer.next_token('if');
+  condition = reader.read_wrapped_delimited_list(lexer, '(', ')');
 
   // note: scripty generates if *statements* - so we use "ifs" (not just "if")
   var list = sl.list(sl.atom("if", {token: ifToken}));
   list.push(condition);
 
-  if(source.on('{')) {
+  if(lexer.on('{')) {
     // we use "begin" here to avoid an an IIFE wrapper:
-    list.push(reader.read_delimited_list(source, '{', '}', [sl.atom('begin')]));
+    list.push(reader.read_delimited_list(lexer, '{', '}', [sl.atom('begin')]));
   }
   else {
     // a single form for the true path:
-    list.push(reader.read(source));
+    list.push(reader.read(lexer));
   }
 
   // note: if there's an else they *must* use the keyword "else"
-  if(source.on('else')) {
+  if(lexer.on('else')) {
     // there's an else clause
-    source.skip_text('else');
-    if(source.on('{')) {
+    lexer.skip_text('else');
+    if(lexer.on('{')) {
       // we use "begin" here to avoid an an IIFE wrapper:
-      list.push(reader.read_delimited_list(source, '{', '}', [sl.atom('begin')]));
+      list.push(reader.read_delimited_list(lexer, '{', '}', [sl.atom('begin')]));
     }
     else {
       // a single form for the else path:
-      list.push(reader.read(source));
+      list.push(reader.read(lexer));
     }
   }
 
@@ -537,46 +520,46 @@ exports['if'] = function(source) {
 // ingrained in javascript programmers.  And the lack of statements
 // makes sugarlisp's generated code more complex (lots of IIFEs) where
 // it has to ensure everything can compose as an expression.
-exports['return'] = function(source) {
+exports['return'] = function(lexer) {
 
   // is this a "return <value>" or a "return;" (i.e. return undefined)?
   // note:  we *require* the semicolon if they're returning undefined
   //   (otherwise they can literally do "return undefined")
-  var returnNothing = source.on("return;");
-  var list = sl.list(sl.atom("return", {token: source.next_token('return')}));
+  var returnNothing = lexer.on("return;");
+  var list = sl.list(sl.atom("return", {token: lexer.next_token('return')}));
   if(!returnNothing) {
-    list.push(reader.read(source));
+    list.push(reader.read(lexer));
   }
   list.__parenoptional = true;
   return list;
 };
 
 // for statement
-exports['for'] = function(source) {
+exports['for'] = function(lexer) {
 
-  var forToken = source.next_token('for');
+  var forToken = lexer.next_token('for');
   var list = sl.list(sl.atom("for", {token: forToken}));
-  if(source.on('(')) {
-    source.skip_text('(');
+  if(lexer.on('(')) {
+    lexer.skip_text('(');
     // initializer
-    list.push(reader.read(source));
+    list.push(reader.read(lexer));
     // condition
-    list.push(reader.read(source));
+    list.push(reader.read(lexer));
     // final expr
-    list.push(reader.read(source));
-    if(!source.on(')')) {
-      source.error("Missing expected ')'" + source.snoop(10));
+    list.push(reader.read(lexer));
+    if(!lexer.on(')')) {
+      lexer.error("Missing expected ')'" + lexer.snoop(10));
     }
-    source.skip_text(')');
-    if(source.on('{')) {
-      list.push(reader.read_delimited_list(source, '{', '}', [sl.atom("begin")]));
+    lexer.skip_text(')');
+    if(lexer.on('{')) {
+      list.push(reader.read_delimited_list(lexer, '{', '}', [sl.atom("begin")]));
     }
     else {
-      list.push(reader.read(source));
+      list.push(reader.read(lexer));
     }
   }
   else {
-    source.error("A for loop must be surrounded by ()");
+    lexer.error("A for loop must be surrounded by ()");
   }
 
   list.__parenoptional = true;
@@ -584,22 +567,22 @@ exports['for'] = function(source) {
 };
 
 // switch statement
-exports['switch'] = function(source) {
-  var switchToken = source.next_token('switch');
-  var switchon = reader.read_wrapped_delimited_list(source, '(', ')');
+exports['switch'] = function(lexer) {
+  var switchToken = lexer.next_token('switch');
+  var switchon = reader.read_wrapped_delimited_list(lexer, '(', ')');
   var list = sl.list(sl.atom("switch", {token: switchToken}));
   list.push(switchon);
 
-  if(!source.on('{')) {
-    source.error("The body of a switch must be wrapped in {}");
+  if(!lexer.on('{')) {
+    lexer.error("The body of a switch must be wrapped in {}");
   }
-  source.skip_token('{');
+  lexer.skip_token('{');
 
-  var read_case_body = function(source) {
+  var read_case_body = function(lexer) {
     var body = sl.list(sl.atom("begin"));
     // read up till the *next* case/default or the end:
-    while(!source.eos() && !source.on(/case|default|}/g)) {
-      var nextform = reader.read(source);
+    while(!lexer.eos() && !lexer.on(/case|default|}/g)) {
+      var nextform = reader.read(lexer);
       // some "directives" don't return an actual form:
       if(!reader.isignorableform(nextform)) {
         body.push(nextform);
@@ -609,24 +592,24 @@ exports['switch'] = function(source) {
   };
 
   var token;
-  while (!source.eos() && (token = source.peek_token()) && token && token.text !== '}') {
+  while (!lexer.eos() && (token = lexer.peek_token()) && token && token.text !== '}') {
 
     // the s-expression is like cond - in pairs:
     // (note the default can't be "true" like cond - switches match *values*)
-    var casetoken = source.next_token();
+    var casetoken = lexer.next_token();
     var caseval = casetoken.text === 'case' ?
-                    reader.read(source) : sl.atom('default');
-    if(!source.on(":")) {
-      source.error('Missing ":" after switch case?');
+                    reader.read(lexer) : sl.atom('default');
+    if(!lexer.on(":")) {
+      lexer.error('Missing ":" after switch case?');
     }
-    source.skip_token(":");
+    lexer.skip_token(":");
     list.push(caseval);
-    list.push(read_case_body(source));
+    list.push(read_case_body(lexer));
   }
-  if (!token || source.eos()) {
-      source.error('Missing "}" on switch body?', switchToken);
+  if (!token || lexer.eos()) {
+      lexer.error('Missing "}" on switch body?', switchToken);
   }
-  var endToken = source.next_token('}'); // skip the '}' token
+  var endToken = lexer.next_token('}'); // skip the '}' token
   list.setClosing(endToken);
 
   return list;

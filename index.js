@@ -1,16 +1,12 @@
 var ctx = require('sugarlisp-core/transpiler-context');
 
 module.exports = {
-  syntax: require('./syntax'),
-  keywords: require('./keywords'),
-  "__sugarscript_init": function(source) {
-    // sugarscript allows semi's as statement terminators like javascript
-    // note: without this semi's get treated as comments and cause problems!
-    source.setLinecommentRE(/\/\//g);
-    // and sugarscript does not treat commas as whitespace (e.g. in "var x,y"
-    // there's an indeterminate number of vars so comma is used to know
-    // when the var form ends)
-    source.setWhitespaceRE(/[\s;]/);
+  name: "sugarscript",
+  extends: "plus",
+  lextab: require('./lextab'),
+  readtab: require('./readtab'),
+  gentab: require('./gentab'),
+  "__sugarscript_init": function(lexer) {
     // for transpiling statements (as opposed to expressions)
     ctx.options.transpile.statements = true;
     ctx.options.transpile.implicitReturns = true;

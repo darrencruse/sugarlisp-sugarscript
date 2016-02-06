@@ -149,8 +149,9 @@
 	  window.setInterval(tick, 30);
 	}
 
-	document.ready = () => (require "./transpiler").enableBrowserRepl();
+	document.ready = () => (require "./engine").enableBrowserRepl();
 
+/*
 	// but these are provided to make it easy
 	#if (transpile.on === "browser")
 	  console.log("transpiled on browser");
@@ -166,7 +167,7 @@
 	  console.log("transpiled for server");
 	#if (undefined?(transpile["for"]))
 	  console.log("transpiling for browser or server not specified");
-
+*/
 	</script>
 
 </head>
