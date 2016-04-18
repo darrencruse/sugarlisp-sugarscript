@@ -155,6 +155,9 @@ exports['var'] = function(lexer, text) {
   return list;
 };
 
+exports['let'] = exports['var'];
+exports['const'] = exports['var'];
+
 // paren-free new keyword
 // note lispy core expects e.g. (new Date), (new Date "October 13, 1975 11:13")
 exports['new'] = function(lexer, text) {
