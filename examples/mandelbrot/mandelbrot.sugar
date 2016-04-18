@@ -79,7 +79,7 @@ function draw() {
 
 draw();
 
-// note the lack of parens around the "e.keyCode" for the switch 
+// note the lack of parens around the "e.keyCode" for the switch
 document.addEventListener("keyup", (e) => switch (e.keyCode) {
     // q
     case 81: {

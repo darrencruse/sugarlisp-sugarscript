@@ -1,5 +1,6 @@
 // Some example SugarScript dialect code snippets
 // (compare to SugarLisp Plus plus-snippets.slisp)
+//#transpile { to: "core" }
 
 console.log((str "Hello" " World"));
 

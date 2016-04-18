@@ -1,8 +1,8 @@
 //#transpile { toa: 'core', tob: 'tokens' }
 
-var http = require("http");
+import { createServer } from "http";
 
-var server = http.createServer( (request, response) => {
+var server = createServer( (request, response) => {
   response.writeHead(200, {'Content-Type': 'text/plain'});
   response.end("Hello World!\n");
 });
